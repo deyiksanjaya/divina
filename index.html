@@ -40,7 +40,10 @@
         #interpreter-window h1 {
             font-family: 'Cinzel Decorative', cursive; font-size: clamp(1.5rem, 5vw, 2.2rem);
             color: #C0C0C0; margin-bottom: 20px;
+            cursor: pointer;
+            transition: color 0.3s ease;
         }
+        #interpreter-window h1:hover { color: #fff; }
         
         #symbol-list {
             list-style: none; width: 100%; max-width: 500px;
@@ -57,20 +60,18 @@
         }
         .symbol-item:hover { background-color: #2a2a2a; }
 
+        #interpreter-window.is-connected .symbol-item {
+            cursor: default;
+        }
+        #interpreter-window.is-connected .symbol-item:hover {
+            background-color: transparent;
+        }
+
         .symbol-number {
-            font-family: 'Cinzel Decorative', cursive;
-            font-size: 1.5rem;
-            color: #999;
-            flex-basis: 40px;
-            flex-shrink: 0;
-            text-align: left;
+            font-family: 'Cinzel Decorative', cursive; font-size: 1.5rem; color: #999;
+            flex-basis: 40px; flex-shrink: 0; text-align: left;
         }
-        .symbol-icon { 
-            font-size: 2rem; 
-            color: #8B0000; 
-            flex-grow: 1;
-            text-align: center;
-        }
+        .symbol-icon { font-size: 2rem; color: #8B0000; flex-grow: 1; text-align: center; }
         
         /* MODAL RAMALAN */
         #modal-overlay {
@@ -83,17 +84,10 @@
             border-radius: 15px; max-width: 90%; width: 400px; text-align: center;
         }
         #modal-symbol {
-            font-size: 70px;
-            line-height: 1;
-            color: #8B0000;
-            margin-bottom: 20px;
-            width: 70px;
-            height: 70px;
-            margin-left: auto;
-            margin-right: auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-size: 70px; line-height: 1; color: #8B0000;
+            margin-bottom: 20px; width: 70px; height: 70px;
+            margin-left: auto; margin-right: auto;
+            display: flex; justify-content: center; align-items: center;
         }
         #modal-text { margin-bottom: 20px; font-style: italic; }
         #modal-close-btn { background: none; border: 1px solid #888; color: #BDBDBD; padding: 8px 20px; cursor: pointer; }
@@ -108,7 +102,7 @@
         #connection-indicator.connected { background-color: #008000; box-shadow: 0 0 10px rgba(0, 255, 0, 0.8); }
         #connection-indicator.failed { background-color: #8B0000; box-shadow: 0 0 10px rgba(255, 0, 0, 0.8); }
         #connection-indicator.data-received {
-            background-color: #ff9800; /* Oranye */
+            background-color: #ff9800;
             box-shadow: 0 0 10px rgba(255, 152, 0, 0.8);
         }
         #connection-indicator.tts-active {
@@ -155,6 +149,12 @@
         .numpad-btn:hover { background-color: #4a4a4a; border-color: #888; }
         #btn-delete svg { width: 40%; height: 40%; fill: #C0C0C0; pointer-events: none; }
         
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.3s ease-in-out; }
     </style>
 </head>
 <body>
@@ -199,9 +199,9 @@
 
         // --- ELEMEN DOM ---
         const interpreterWindow = document.getElementById('interpreter-window');
+        const interpreterTitle = interpreterWindow.querySelector('h1');
         const symbolList = document.getElementById('symbol-list');
         const modalOverlay = document.getElementById('modal-overlay');
-        const modalContent = document.getElementById('modal-content');
         const modalSymbol = document.getElementById('modal-symbol');
         const modalText = document.getElementById('modal-text');
         const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -244,6 +244,7 @@
                 if (snapshot.exists()) {
                     isConnected = true;
                     connectionFailed = false;
+                    interpreterWindow.classList.add('is-connected');
                     connectionIndicator.className = 'connected';
                     connectionIndicator.style.display = 'block';
                     listenToContent(ref(database, 'rooms/' + roomId + '/data'));
@@ -285,7 +286,6 @@
                     }
                     currentTextToSpeak = `${namaBulan}. ${kemungkinanZodiak}. ${pertanyaan}.`;
                     if (isTtsEnabled) speak(currentTextToSpeak);
-
                 } else {
                     currentTextToSpeak = "";
                 }
@@ -356,7 +356,6 @@
                 connectionIndicator.classList.remove('tts-active');
                 connectionIndicator.classList.add('connected');
                 window.speechSynthesis.cancel();
-                speak("voice deactivated");
             }
         }
 
@@ -388,6 +387,10 @@
         document.body.addEventListener('touchstart', startHold, { passive: true });
         document.body.addEventListener('touchend', endHold);
         
+        interpreterTitle.addEventListener('click', () => {
+            window.location.reload();
+        });
+
         interpreterWindow.addEventListener('click', (e) => {
             if (e.target.closest('.symbol-item') || !isConnected) return;
             clearTimeout(ttsTapTimer);

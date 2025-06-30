@@ -21,7 +21,6 @@
         .container { max-width: 800px; margin: 0 auto; background-color: #1E1E1E; border: 1px solid #444; padding: 30px; }
         .main-title { font-family: 'Cinzel Decorative', cursive; font-size: 2.5rem; text-align: center; color: #C0C0C0; margin-bottom: 5px; }
         
-        /* --- SUBTITLE BARU UNTUK ANGEL NUMBER --- */
         .angel-number-subtitle {
             font-family: 'Lora', serif;
             font-size: 1rem;
@@ -52,11 +51,9 @@
     </div>
 
     <script type="module">
-        // --- FIX: Menggunakan URL lengkap dari Firebase CDN ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
         import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
 
-        // Your web app's Firebase configuration
         const firebaseConfig = {
           apiKey: "AIzaSyCblBBI3macwNluj2Fv0QoHwHHuJKVtRec",
           authDomain: "divina-connect.firebaseapp.com",
@@ -67,19 +64,22 @@
           appId: "1:777570372540:web:6b4f3be1b46dbe9fdcf9b9"
         };
         
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
         let currentRoomId = null; 
 
-        // --- LOGIKA BARU: GENERATE ANGEL NUMBER ---
         window.addEventListener('load', () => {
-            // Membuat kode 4 digit unik sekali pakai
             const angelNumber = Math.floor(1000 + Math.random() * 9000).toString();
             currentRoomId = angelNumber;
             document.getElementById('angel-number-code').textContent = angelNumber;
-            renderBulanList(); // Langsung render daftar bulan
+            
+            // --- PERUBAHAN DI SINI: MENINGGALKAN "JEJAK" ---
+            // Saat Angel Number dibuat, langsung tulis sesuatu ke database
+            // untuk menandakan bahwa ruangan ini "ada" dan aktif.
+            set(ref(database, 'rooms/' + currentRoomId + '/presence'), true);
+
+            renderBulanList(); 
         });
 
         const bulanData = [

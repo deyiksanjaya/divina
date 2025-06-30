@@ -40,19 +40,22 @@
         .full-text { display: none; margin: 15px auto; border-left: 2px solid #8B0000; padding-left: 15px; text-align: justify; max-width: 50ch; }
         .read-more { background: none; border: 1px solid #888; color: #BDBDBD; padding: 8px 16px; cursor: pointer; }
         .read-more:hover { background-color: #8B0000; color: #fff; border-color: #8B0000; }
+        /* Style ini tidak lagi digunakan, tapi kita biarkan jika diperlukan lagi */
+        .session-expired-msg { text-align: center; color: #ff5252; font-style: italic; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 class="main-title">Arti Bulan Lahirmu</h1>
-        <p class="angel-number-subtitle">Angel Number-mu Hari Ini : <span id="angel-number-code"></span></p>
+        <p class="angel-number-subtitle">Angel Number-mu Hari Ini : <span id="angel-number-code">Memuat...</span></p>
         
         <div id="bulan-list-container"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
+        // --- Impor 'get' dan 'onDisconnect' ---
+        import { getDatabase, ref, set, get, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyCblBBI3macwNluj2Fv0QoHwHHuJKVtRec",
@@ -69,18 +72,63 @@
 
         let currentRoomId = null; 
 
-        window.addEventListener('load', () => {
-            const angelNumber = Math.floor(1000 + Math.random() * 9000).toString();
-            currentRoomId = angelNumber;
-            document.getElementById('angel-number-code').textContent = angelNumber;
-            
-            // --- PERUBAHAN DI SINI: MENINGGALKAN "JEJAK" ---
-            // Saat Angel Number dibuat, langsung tulis sesuatu ke database
-            // untuk menandakan bahwa ruangan ini "ada" dan aktif.
-            set(ref(database, 'rooms/' + currentRoomId + '/presence'), true);
+        // --- LOGIKA BARU DENGAN REVOKE OTOMATIS ---
+        async function findAndSetEmptyRoom() {
+            let roomFound = false;
+            let angelNumber;
+            let attempts = 0;
 
-            renderBulanList(); 
+            while (!roomFound && attempts < 100) { 
+                angelNumber = Math.floor(1000 + Math.random() * 9000).toString();
+                const roomRef = ref(database, 'rooms/' + angelNumber);
+                
+                try {
+                    const snapshot = await get(roomRef);
+                    if (!snapshot.exists()) {
+                        roomFound = true;
+                    } else {
+                        attempts++;
+                    }
+                } catch (error) {
+                    console.error("Gagal memeriksa ruangan:", error);
+                    break;
+                }
+            }
+            
+            if (roomFound) {
+                currentRoomId = angelNumber;
+                const presenceRef = ref(database, 'rooms/' + currentRoomId + '/presence');
+                
+                document.getElementById('angel-number-code').textContent = angelNumber;
+                await set(presenceRef, true);
+                renderBulanList();
+                
+                // --- FITUR BARU: Auto-cleanup ---
+                // 1. Jika tab ditutup, hapus 'presence'
+                onDisconnect(presenceRef).remove();
+
+                // 2. Set timer untuk menghapus ruangan setelah 5 menit
+                setTimeout(() => {
+                    // Hanya hapus jika ruangan masih ada (belum dihapus oleh onDisconnect)
+                    get(presenceRef).then(snapshot => {
+                        if (snapshot.exists()) {
+                            console.log(`Ruangan ${currentRoomId} telah kedaluwarsa dan dihapus.`);
+                            remove(ref(database, 'rooms/' + currentRoomId)); // Hapus seluruh ruangan
+                            // --- PERUBAHAN DI SINI: Pesan dihapus ---
+                        }
+                    });
+                }, 300000); // 300.000 ms = 5 menit
+
+            } else {
+                document.getElementById('angel-number-code').textContent = "ERROR";
+                console.error("Gagal menemukan ruangan kosong setelah 100 percobaan.");
+            }
+        }
+
+        window.addEventListener('load', () => {
+            findAndSetEmptyRoom();
         });
+
 
         const bulanData = [
             { nama: "Januari", subtitle: "Jiwa Ambisius yang Tersembunyi", zodiak: "Capricorn / Aquarius", deskripsi: "Terlahir di awal tahun, mereka adalah arsitek takdirnya sendiri. Di balik penampilan yang tenang, tersembunyi tekad sekeras baja dan ambisi yang membara. Mereka melihat dunia sebagai sebuah tatanan yang harus ditaklukkan dengan logika dan kesabaran." },

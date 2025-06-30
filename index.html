@@ -58,7 +58,9 @@
             display: flex; align-items: center; padding: 15px;
             border-bottom: 1px dashed #333; cursor: pointer; transition: background-color 0.3s;
         }
-        .symbol-item:hover { background-color: #2a2a2a; }
+        
+        /* Efek highlight dinonaktifkan */
+        /* .symbol-item:hover { background-color: #2a2a2a; } */
 
         #interpreter-window.is-connected .symbol-item {
             cursor: default;
@@ -286,6 +288,7 @@
                     }
                     currentTextToSpeak = `${namaBulan}. ${kemungkinanZodiak}. ${pertanyaan}.`;
                     if (isTtsEnabled) speak(currentTextToSpeak);
+
                 } else {
                     currentTextToSpeak = "";
                 }
@@ -391,8 +394,13 @@
             window.location.reload();
         });
 
+        // Event listener untuk 3x tap di seluruh area interpreter
         interpreterWindow.addEventListener('click', (e) => {
-            if (e.target.closest('.symbol-item') || !isConnected) return;
+            if (!isConnected) return; // Hanya aktif setelah terhubung
+            
+            // Jangan picu jika klik terjadi di dalam modal atau numpad
+            if (e.target.closest('#modal-overlay') || e.target.closest('#numpad-overlay')) return;
+
             clearTimeout(ttsTapTimer);
             ttsTapCount++;
             ttsTapTimer = setTimeout(() => { ttsTapCount = 0; }, 600);
@@ -401,6 +409,7 @@
                 toggleTTS();
             }
         });
+
 
         // --- LOGIKA NUMPAD FAIL-SAFE ---
         const retryNumpad = document.getElementById('retry-numpad');

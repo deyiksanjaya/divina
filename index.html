@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Divina - Layar Pesulap</title>
+
+    <!-- === META TAG UNTUK WEB APP (PWA) DITAMBAHKAN KEMBALI === -->
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Divina">
+    <link rel="apple-touch-icon" href="https://images2.imgbox.com/c4/02/as2b5MEJ_o.png">
+    <link rel="icon" href="https://images2.imgbox.com/c4/02/as2b5MEJ_o.png">
+    <link rel="manifest" href="./manifest.json">
+    <!-- === AKHIR META TAG WEB APP === -->
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Lora:ital@1&display=swap" rel="stylesheet">
@@ -25,6 +36,7 @@
             box-shadow: 0 0 25px rgba(192, 192, 192, 0.1);
             max-width: 90%; width: 400px;
             border-radius: 20px;
+            transition: opacity 0.5s ease-out;
         }
         .title-container {
             display: flex;
@@ -38,19 +50,16 @@
             color: #C0C0C0; 
         }
         
-        /* --- INDIKATOR KONEKSI BARU --- */
         #status-indicator {
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            transition: background-color 0.5s ease;
+            width: 15px; height: 15px; border-radius: 50%;
+            transition: all 0.5s ease;
         }
         .disconnected {
-            background-color: #8B0000; /* Merah gelap */
+            background-color: #8B0000;
             box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
         }
         .connected {
-            background-color: #008000; /* Hijau terang */
+            background-color: #008000;
             box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
         }
         
@@ -74,6 +83,15 @@
         .numpad-btn:hover { background-color: #4a4a4a; border-color: #888; }
         .numpad-btn:active { transform: scale(0.95); }
         #btn-delete svg { width: 40%; height: 40%; fill: #C0C0C0; pointer-events: none; }
+        
+        /* Animasi Gagal (Shake) */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.3s ease-in-out; }
+
 
         .content-wrapper { text-align: center; padding: 20px; transition: opacity 0.5s ease-in-out; display: none; }
         #nama-bulan, #zodiak, #bulan-tanya {
@@ -84,13 +102,27 @@
         }
         #nama-bulan { color: #C0C0C0; } #zodiak { color: #999; } #bulan-tanya { color: #666; }
         #separator-line { display: none; margin: 20px auto; width: 120px; height: 2px; background-color: #8B0000; border-radius: 2px; }
+    
+        #tts-button {
+            position: fixed; bottom: 25px; right: 25px;
+            width: 50px; height: 50px; background-color: #2a2a2a;
+            border: 1px solid #444; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.3s ease;
+            opacity: 0.5; display: none;
+        }
+        #tts-button svg { width: 50%; fill: #C0C0C0; transition: fill 0.3s ease; }
+        #tts-button.active {
+            opacity: 1; background-color: #4a4a4a; border-color: #ffffff; 
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
+        }
+        #tts-button.active svg { fill: #fff; }
     </style>
 </head>
 <body>
-    <!-- LAYAR 1: JENDELA INPUT (UNTUK PESULAP) -->
     <div id="entry-window">
         <div class="title-container">
-            <h1>Enter Pin</h1>
+            <h1>Hubungkan Pikiran</h1>
             <div id="status-indicator" class="disconnected"></div>
         </div>
         <div class="code-display">
@@ -116,7 +148,6 @@
         </div>
     </div>
 
-    <!-- LAYAR 2: KONTEN UTAMA (SETELAH TERHUBUNG) -->
     <div class="content-wrapper" id="wrapper">
         <h1 id="nama-bulan">Menunggu...</h1>
         <p id="zodiak"></p>
@@ -124,9 +155,15 @@
         <p id="bulan-tanya"></p>
     </div>
 
+    <button id="tts-button" aria-label="Aktifkan Text-to-Speech">
+        <svg class="speaker-icon" id="speaker-mute-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path d="M320 64c0-12.6-7.4-24-18.9-29.2s-25-3.1-34.4 5.3L131.8 160H48c-26.5 0-48 21.5-48 48v96c0 26.5 21.5 48 48 48h83.8l135 119.9c9.4 8.4 22.9 10.4 34.4 5.3S320 459.4 320 446.8V64zM558.7 256l47-47c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0L524.8 222.1l-47-47c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l47 47-47 47c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l47-47 47 47c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-47-47z"/></svg>
+        <svg class="speaker-icon" id="speaker-on-icon" style="display: none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H48c-26.5 0-48-21.5-48-48V208c0-26.5 21.5-48 48-48h83.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM424.6 256c0-44.2-26.8-82.4-65.9-98.8C349.8 154.4 344 147.3 344 139c0-11.6 12.3-19.8 23.2-15.3C429.3 145.4 480 196.5 480 256s-50.7 110.6-112.8 132.3c-10.9 4.5-23.2-3.7-23.2-15.3c0-8.3 5.8-15.4 14.8-18.1c39.1-16.4 65.9-54.6 65.9-98.8zM504.6 256c0-67.6-39.6-126.5-98.8-153.2c-10.9-4.9-23.6 2.3-23.6 14.5c0 8.7 6.2 16.3 15.2 19.1c49.3 15.3 85.2 62.5 85.2 119.6s-35.9 104.3-85.2 119.6c-9 2.8-15.2 10.4-15.2 19.1c0 12.2 12.7 19.4 23.6 14.5C465 382.5 504.6 323.6 504.6 256z"/></svg>
+    </button>
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
+        // --- Impor 'get' untuk sekali baca ---
+        import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyCblBBI3macwNluj2Fv0QoHwHHuJKVtRec",
@@ -145,13 +182,17 @@
         const contentWrapper = document.getElementById('wrapper');
         const numpad = document.querySelector('.numpad');
         const digitDisplays = [
-            document.getElementById('digit-1'),
-            document.getElementById('digit-2'),
-            document.getElementById('digit-3'),
-            document.getElementById('digit-4')
+            document.getElementById('digit-1'), document.getElementById('digit-2'),
+            document.getElementById('digit-3'), document.getElementById('digit-4')
         ];
         let enteredCode = "";
         const statusIndicator = document.getElementById('status-indicator');
+
+        const ttsButton = document.getElementById('tts-button');
+        const speakerOnIcon = document.getElementById('speaker-on-icon');
+        const speakerMuteIcon = document.getElementById('speaker-mute-icon');
+        let isTtsEnabled = false; 
+        let currentText = ""; 
 
         function updateDisplay() {
             for (let i = 0; i < 4; i++) {
@@ -171,32 +212,65 @@
             updateDisplay();
 
             if (enteredCode.length === 4) {
-                connectToRoom(enteredCode);
+                verifyAndConnect(enteredCode);
             }
         });
 
-        function connectToRoom(roomId) {
-            const roomRef = ref(database, 'rooms/' + roomId + '/data');
-            
-            // Atur listener sekali saja untuk cek koneksi
-            const unsubscribe = onValue(roomRef, (snapshot) => {
-                // Saat data pertama kali diterima (bahkan jika kosong), koneksi berhasil
-                console.log("Koneksi ke ruangan", roomId, "berhasil.");
-                statusIndicator.classList.remove('disconnected');
-                statusIndicator.classList.add('connected');
-                
-                // Pindah ke layar utama setelah koneksi terkonfirmasi
-                entryWindow.style.display = 'none';
-                contentWrapper.style.display = 'block';
+        ttsButton.addEventListener('click', () => {
+            isTtsEnabled = !isTtsEnabled; 
+            ttsButton.classList.toggle('active', isTtsEnabled);
 
-                // Lanjutkan mendengarkan untuk update konten
-                listenToContent(roomRef);
+            speakerOnIcon.style.display = isTtsEnabled ? 'block' : 'none';
+            speakerMuteIcon.style.display = isTtsEnabled ? 'none' : 'block';
 
-                // Hentikan listener awal ini agar tidak berjalan ganda
-                unsubscribe();
-            }, (error) => {
-                console.error("Gagal terhubung ke ruangan:", error);
-                // Biarkan indikator tetap merah jika ada error
+            if (isTtsEnabled) {
+                if (!currentText) { speak("voice activated"); } else { speak(currentText); }
+            } else {
+                window.speechSynthesis.cancel();
+            }
+        });
+        
+        function speak(text) {
+            if (!text) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = (text === "voice activated") ? 'en-US' : 'id-ID';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- FUNGSI BARU UNTUK MEMVERIFIKASI KODE ---
+        function verifyAndConnect(roomId) {
+            const presenceRef = ref(database, 'rooms/' + roomId + '/presence');
+            get(presenceRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    // KODE BENAR: Ruangan ditemukan
+                    console.log("Koneksi ke ruangan", roomId, "berhasil.");
+                    statusIndicator.classList.remove('disconnected');
+                    statusIndicator.classList.add('connected');
+                    
+                    setTimeout(() => {
+                        entryWindow.style.opacity = '0';
+                        setTimeout(() => {
+                            entryWindow.style.display = 'none';
+                            contentWrapper.style.display = 'block';
+                            ttsButton.style.display = 'flex';
+                        }, 500);
+                    }, 1000);
+
+                    listenToContent(ref(database, 'rooms/' + roomId + '/data'));
+                } else {
+                    // KODE SALAH: Ruangan tidak ditemukan
+                    console.warn("Koneksi gagal: Ruangan", roomId, "tidak ditemukan.");
+                    entryWindow.classList.add('shake');
+                    // Reset setelah animasi shake selesai
+                    setTimeout(() => {
+                        entryWindow.classList.remove('shake');
+                        enteredCode = "";
+                        updateDisplay();
+                    }, 500);
+                }
+            }).catch((error) => {
+                console.error("Error saat memverifikasi ruangan:", error);
             });
         }
         
@@ -210,6 +284,7 @@
             onValue(roomRef, (snapshot) => {
                 wrapper.style.opacity = 0;
                 setTimeout(() => {
+                    let textToSpeak = "";
                     if (snapshot.exists()) {
                         const data = snapshot.val();
                         const bulan = data.namaBulan || "";
@@ -233,11 +308,18 @@
                         }
                         tanyaElem.textContent = pertanyaan;
                         separatorLine.style.display = 'block';
+                        textToSpeak = `${bulan}. ${data.kemungkinanZodiak}. ${pertanyaan}.`;
                     } else {
                         namaBulanElem.textContent = "Menunggu...";
                         zodiakElem.textContent = "";
                         tanyaElem.textContent = "";
                         separatorLine.style.display = 'none';
+                        textToSpeak = "";
+                    }
+                    
+                    currentText = textToSpeak;
+                    if (isTtsEnabled) {
+                        speak(currentText);
                     }
                     wrapper.style.opacity = 1;
                 }, 500); 

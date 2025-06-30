@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divina - Kontrol</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Lora:ital@0;1&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #121212;
+            color: #E0E0E0;
+            font-family: 'Lora', serif;
+            line-height: 1.7;
+            padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; background-color: #1E1E1E; border: 1px solid #444; padding: 30px; }
+        .main-title { font-family: 'Cinzel Decorative', cursive; font-size: 2.5rem; text-align: center; color: #C0C0C0; margin-bottom: 5px; }
+        
+        /* --- SUBTITLE BARU UNTUK ANGEL NUMBER --- */
+        .angel-number-subtitle {
+            font-family: 'Lora', serif;
+            font-size: 1rem;
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+        }
+        .angel-number-code {
+            font-weight: bold;
+            color: #BDBDBD;
+        }
+
+        .bulan-card { border-bottom: 1px dashed #444; padding: 25px 10px; text-align: center; }
+        .bulan-card h2 { font-family: 'Cinzel Decorative', cursive; font-size: 1.8rem; color: #BDBDBD; }
+        .bulan-card .subtitle { font-style: italic; color: #888; }
+        .full-text { display: none; margin: 15px auto; border-left: 2px solid #8B0000; padding-left: 15px; text-align: justify; max-width: 50ch; }
+        .read-more { background: none; border: 1px solid #888; color: #BDBDBD; padding: 8px 16px; cursor: pointer; }
+        .read-more:hover { background-color: #8B0000; color: #fff; border-color: #8B0000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">Arti Bulan Lahirmu</h1>
+        <p class="angel-number-subtitle">Angel Number-mu Hari Ini : <span id="angel-number-code"></span></p>
+        
+        <div id="bulan-list-container"></div>
+    </div>
+
+    <script type="module">
+        // --- FIX: Menggunakan URL lengkap dari Firebase CDN ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyCblBBI3macwNluj2Fv0QoHwHHuJKVtRec",
+          authDomain: "divina-connect.firebaseapp.com",
+          databaseURL: "https://divina-connect-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "divina-connect",
+          storageBucket: "divina-connect.firebasestorage.app",
+          messagingSenderId: "777570372540",
+          appId: "1:777570372540:web:6b4f3be1b46dbe9fdcf9b9"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        let currentRoomId = null; 
+
+        // --- LOGIKA BARU: GENERATE ANGEL NUMBER ---
+        window.addEventListener('load', () => {
+            // Membuat kode 4 digit unik sekali pakai
+            const angelNumber = Math.floor(1000 + Math.random() * 9000).toString();
+            currentRoomId = angelNumber;
+            document.getElementById('angel-number-code').textContent = angelNumber;
+            renderBulanList(); // Langsung render daftar bulan
+        });
+
+        const bulanData = [
+            { nama: "Januari", subtitle: "Jiwa Ambisius yang Tersembunyi", zodiak: "Capricorn / Aquarius", deskripsi: "Terlahir di awal tahun, mereka adalah arsitek takdirnya sendiri. Di balik penampilan yang tenang, tersembunyi tekad sekeras baja dan ambisi yang membara. Mereka melihat dunia sebagai sebuah tatanan yang harus ditaklukkan dengan logika dan kesabaran." },
+            { nama: "Februari", subtitle: "Sang Visioner Berhati Lembut", zodiak: "Aquarius / Pisces", deskripsi: "Mereka adalah pemimpi yang berjalan di antara dua dunia: realita dan fantasi. Dengan intuisi yang tajam dan pikiran yang inovatif, mereka seringkali berada di depan zamannya. Hati mereka adalah lautan empati yang dalam, mampu merasakan apa yang tak terucap." },
+            { nama: "Maret", subtitle: "Arus Misterius Penuh Empati", zodiak: "Pisces / Aries", deskripsi: "Seperti air yang bisa tenang namun juga bergejolak, jiwa mereka penuh dengan misteri. Mereka memiliki kepekaan artistik dan spiritual yang tinggi, membuat mereka mampu melihat keindahan di tempat yang paling gelap sekalipun. Namun, jangan remehkan kekuatan mereka saat terprovokasi." },
+            { nama: "April", subtitle: "Api Perintis yang Tak Terpadamkan", zodiak: "Aries / Taurus", deskripsi: "Mereka adalah percikan api pertama, sang perintis yang tak kenal takut. Dengan energi yang meledak-ledak dan keberanian untuk memimpin, mereka selalu mencari tantangan baru. Gairah adalah bahan bakar mereka, dan mereka tidak akan berhenti sampai tujuannya tercapai." },
+            { nama: "Mei", subtitle: "Pesona Duniawi yang Memikat", zodiak: "Taurus / Gemini", deskripsi: "Terlahir saat alam sedang bersemi, mereka menghargai keindahan dan kenyamanan di atas segalanya. Kesabaran adalah kebajikan mereka, namun di baliknya ada keinginan kuat untuk membangun fondasi yang kokoh. Mereka adalah perpaduan antara sensualitas dan kecerdasan yang tajam." },
+            { nama: "Juni", subtitle: "Komunikator Ulung Berjiwa Ganda", zodiak: "Gemini / Cancer", deskripsi: "Pikiran mereka adalah labirin yang menarik, selalu ingin tahu dan haus akan pengetahuan. Kemampuan mereka untuk beradaptasi dan berkomunikasi tidak ada duanya. Namun, mereka juga memiliki sisi yang lebih dalam dan emosional yang hanya ditunjukkan kepada orang-orang terdekat." },
+            { nama: "Juli", subtitle: "Sang Pelindung Berhati Hangat", zodiak: "Cancer / Leo", deskripsi: "Setia dan protektif, keluarga dan 'rumah' adalah segalanya bagi mereka. Intuisi mereka bekerja layaknya kompas, selalu menuntun ke arah kebenaran emosional. Di balik cangkang pelindung mereka, terdapat hati yang hangat dan penuh kasih sayang." },
+            { nama: "Agustus", subtitle: "Raja Panggung yang Karismatik", zodiak: "Leo / Virgo", deskripsi: "Dilahirkan untuk bersinar, mereka memiliki aura kepemimpinan dan karisma yang alami. Mereka murah hati dan memiliki semangat yang membara. Pusat perhatian adalah panggung mereka, tempat mereka bisa menginspirasi dan menghibur dengan penuh percaya diri." },
+            { nama: "September", subtitle: "Analis Perfeksionis yang Cermat", zodiak: "Virgo / Libra", deskripsi: "Dengan pikiran yang tajam dan mata yang jeli terhadap detail, tidak ada yang luput dari analisis mereka. Mereka adalah penyembuh dan pelayan yang berdedikasi, selalu berusaha untuk memperbaiki apa yang rusak. Keteraturan dan logika adalah kunci ketenangan jiwa mereka." },
+            { nama: "Oktober", subtitle: "Diplomat Pencari Keseimbangan", zodiak: "Libra / Scorpio", deskripsi: "Mereka adalah penenun harmoni, selalu mencari keseimbangan dan keadilan dalam setiap aspek kehidupan. Pesona dan kecerdasan sosial membuat mereka mudah disukai. Namun, di balik senyum mereka, ada keinginan kuat akan hubungan yang dalam dan otentik." },
+            { nama: "November", subtitle: "Jiwa Intens Penuh Rahasia", zodiak: "Scorpio / Sagittarius", deskripsi: "Misterius dan penuh gairah, mereka adalah lautan yang dalam dan tenang di permukaan. Mereka memiliki kekuatan transformatif untuk bangkit dari kehancuran. Loyalitas bagi mereka adalah segalanya, dan pengkhianatan tidak akan pernah dilupakan." },
+            { nama: "Desember", subtitle: "Petualang Optimis Berwawasan Luas", zodiak: "Sagittarius / Capricorn", deskripsi: "Kebebasan adalah napas mereka. Dengan jiwa petualang dan pikiran yang terbuka, mereka selalu mencari cakrawala baru dan kebenaran filosofis. Optimisme mereka menular, dan mereka melihat hidup sebagai sebuah perjalanan besar yang harus dinikmati." }
+        ];
+        
+        const container = document.getElementById('bulan-list-container');
+        
+        function kirimKeFirebase(bulan) {
+            if (!currentRoomId) return; 
+            const dataUntukDikirim = { 
+                namaBulan: bulan.nama, 
+                kemungkinanZodiak: bulan.zodiak 
+            };
+            set(ref(database, 'rooms/' + currentRoomId + '/data'), dataUntukDikirim);
+        }
+
+        function renderBulanList() {
+             container.innerHTML = '';
+             bulanData.forEach(bulan => {
+                const card = document.createElement('div');
+                card.className = 'bulan-card';
+                card.innerHTML = `
+                    <h2>${bulan.nama}</h2>
+                    <p class="subtitle">${bulan.subtitle}</p>
+                    <div class="full-text">
+                        <p>${bulan.deskripsi}</p>
+                    </div>
+                    <button class="read-more" data-bulan="${bulan.nama}">Baca Selengkapnya</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        container.addEventListener('click', function(e) {
+            if (e.target.classList.contains('read-more')) {
+                const clickedButton = e.target;
+                const clickedCard = clickedButton.closest('.bulan-card');
+                const clickedFullText = clickedCard.querySelector('.full-text');
+                const wasVisible = clickedFullText.style.display === 'block';
+
+                document.querySelectorAll('.full-text').forEach(textDiv => {
+                    textDiv.style.display = 'none';
+                });
+                document.querySelectorAll('.read-more').forEach(button => {
+                    button.textContent = 'Baca Selengkapnya';
+                });
+
+                if (!wasVisible) {
+                    clickedFullText.style.display = 'block';
+                    clickedButton.textContent = 'Sembunyikan';
+                    
+                    const namaBulan = clickedButton.getAttribute('data-bulan');
+                    const bulanObj = bulanData.find(b => b.nama === namaBulan);
+                    if (bulanObj) {
+                        kirimKeFirebase(bulanObj);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

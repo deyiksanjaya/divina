@@ -2,10 +2,11 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- --- PERUBAHAN DI SINI: MENCEGAH ZOOM --- -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Divina - Layar Pesulap</title>
 
-    <!-- === META TAG UNTUK WEB APP (PWA) DITAMBAHKAN KEMBALI === -->
+    <!-- Meta tags untuk PWA -->
     <meta name="theme-color" content="#121212">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,7 +14,6 @@
     <link rel="apple-touch-icon" href="https://images2.imgbox.com/c4/02/as2b5MEJ_o.png">
     <link rel="icon" href="https://images2.imgbox.com/c4/02/as2b5MEJ_o.png">
     <link rel="manifest" href="./manifest.json">
-    <!-- === AKHIR META TAG WEB APP === -->
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,6 +27,11 @@
         body {
             display: flex; justify-content: center; align-items: center;
             color: #E0E0E0; font-family: 'Lora', serif;
+            /* --- PERUBAHAN DI SINI: MENCEGAH COPY-PASTE --- */
+            user-select: none; /* Standar */
+            -webkit-user-select: none; /* Safari */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* IE/Edge */
         }
 
         /* Desain Jendela Input */
@@ -162,7 +167,6 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
-        // --- Impor 'get' untuk sekali baca ---
         import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
 
         const firebaseConfig = {
@@ -238,12 +242,10 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // --- FUNGSI BARU UNTUK MEMVERIFIKASI KODE ---
         function verifyAndConnect(roomId) {
             const presenceRef = ref(database, 'rooms/' + roomId + '/presence');
             get(presenceRef).then((snapshot) => {
                 if (snapshot.exists()) {
-                    // KODE BENAR: Ruangan ditemukan
                     console.log("Koneksi ke ruangan", roomId, "berhasil.");
                     statusIndicator.classList.remove('disconnected');
                     statusIndicator.classList.add('connected');
@@ -259,10 +261,8 @@
 
                     listenToContent(ref(database, 'rooms/' + roomId + '/data'));
                 } else {
-                    // KODE SALAH: Ruangan tidak ditemukan
                     console.warn("Koneksi gagal: Ruangan", roomId, "tidak ditemukan.");
                     entryWindow.classList.add('shake');
-                    // Reset setelah animasi shake selesai
                     setTimeout(() => {
                         entryWindow.classList.remove('shake');
                         enteredCode = "";

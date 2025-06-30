@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Divina - Layar Pesulap</title>
 
     <!-- Meta tags untuk PWA -->
@@ -14,7 +14,7 @@
     <link rel="icon" href="https://images2.imgbox.com/c4/02/as2b5MEJ_o.png">
     <link rel="manifest" href="./manifest.json">
 
-    <!-- FONT BARU YANG LEBIH MUDAH DIBACA -->
+    <!-- --- FONT BARU YANG LEBIH MUDAH DIBACA --- -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
@@ -30,7 +30,7 @@
             display: flex; justify-content: center; align-items: center;
             color: #5D4037; 
             font-family: 'Cormorant Garamond', serif;
-            padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
+            padding: 20px;
         }
 
         /* DESAIN INTERPRETER */
@@ -40,21 +40,17 @@
             display: flex; flex-direction: column;
             align-items: center;
         }
-        .title-container {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
         #interpreter-window h1 {
+            /* --- PERUBAHAN FONT --- */
             font-family: 'Cinzel', serif; 
             font-size: clamp(2rem, 7vw, 3.5rem);
             font-weight: 700;
             color: #B8860B;
             text-shadow: 1px 1px 3px rgba(255,255,255,0.5);
+            margin-bottom: 20px;
             cursor: pointer;
             transition: color 0.3s ease;
             letter-spacing: 1px;
-            padding: 0 20px; 
         }
         #interpreter-window h1:hover { color: #A4770A; }
         
@@ -120,10 +116,7 @@
         
         /* INDIKATOR KONEKSI */
         #connection-indicator {
-            position: absolute; 
-            top: 50%;
-            right: 0;
-            transform: translateY(-50%);
+            position: fixed; top: 15px; left: 15px;
             width: 5px; height: 5px; border-radius: 50%;
             display: none; z-index: 150;
             transition: all 0.5s ease;
@@ -135,8 +128,8 @@
             box-shadow: 0 0 10px #FFA000;
         }
         #connection-indicator.tts-active {
-            background-color: #ffffff;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            background-color: #1565C0;
+            box-shadow: 0 0 10px #1565C0;
         }
 
         /* KONTEN HASIL RAMALAN (SEBAGAI OVERLAY) */
@@ -148,6 +141,7 @@
             backdrop-filter: blur(8px); z-index: 140;
         }
         #nama-bulan, #zodiak, #bulan-tanya {
+            /* --- PERUBAHAN FONT --- */
             font-family: 'Cinzel', serif; 
             font-size: clamp(24px, 6vw, 50px);
             text-shadow: 1px 1px 2px rgba(255,255,255,0.7); margin: 0; line-height: 1.4;
@@ -188,14 +182,9 @@
     </style>
 </head>
 <body>
-    <div id="interpreter-window">
-        <div class="title-container">
-            <h1>Angel Number Interpreter</h1>
-            <div id="connection-indicator"></div>
-        </div>
-        <ul id="symbol-list"></ul>
-    </div>
+    <div id="interpreter-window"><h1>Angel Number Interpreter</h1><ul id="symbol-list"></ul></div>
     <div id="modal-overlay"><div id="modal-content"><div id="modal-symbol"></div><p id="modal-text"></p><button id="modal-close-btn">Tutup</button></div></div>
+    <div id="connection-indicator"></div>
     <div class="content-wrapper" id="wrapper"><div><h1 id="nama-bulan"></h1><p id="zodiak"></p><div id="separator-line"></div><p id="bulan-tanya"></p></div></div>
     
     <!-- KEYPAD FAIL-SAFE -->

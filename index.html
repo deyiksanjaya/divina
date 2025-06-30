@@ -2,8 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <!-- --- PERUBAHAN DI SINI: Menambahkan viewport-fit=cover untuk iOS --- -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Divina - Layar Pesulap</title>
 
     <!-- Meta tags untuk PWA -->
@@ -15,7 +14,7 @@
     <link rel="icon" href="https://images2.imgbox.com/c4/02/as2b5MEJ_o.png">
     <link rel="manifest" href="./manifest.json">
 
-    <!-- FONT BARU YANG LEBIH MUDAH DIBACA -->
+    <!-- --- FONT BARU YANG LEBIH MUDAH DIBACA --- -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
@@ -31,8 +30,7 @@
             display: flex; justify-content: center; align-items: center;
             color: #5D4037; 
             font-family: 'Cormorant Garamond', serif;
-            /* --- PERUBAHAN DI SINI: Menggunakan padding safe area --- */
-            padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
+            padding: 20px;
         }
 
         /* DESAIN INTERPRETER */
@@ -43,6 +41,7 @@
             align-items: center;
         }
         #interpreter-window h1 {
+            /* --- PERUBAHAN FONT --- */
             font-family: 'Cinzel', serif; 
             font-size: clamp(2rem, 7vw, 3.5rem);
             font-weight: 700;
@@ -128,10 +127,9 @@
             background-color: #FFA000;
             box-shadow: 0 0 10px #FFA000;
         }
-        /* --- PERUBAHAN DI SINI: Indikator TTS menjadi putih --- */
         #connection-indicator.tts-active {
-            background-color: #ffffff;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            background-color: #1565C0;
+            box-shadow: 0 0 10px #1565C0;
         }
 
         /* KONTEN HASIL RAMALAN (SEBAGAI OVERLAY) */
@@ -143,6 +141,7 @@
             backdrop-filter: blur(8px); z-index: 140;
         }
         #nama-bulan, #zodiak, #bulan-tanya {
+            /* --- PERUBAHAN FONT --- */
             font-family: 'Cinzel', serif; 
             font-size: clamp(24px, 6vw, 50px);
             text-shadow: 1px 1px 2px rgba(255,255,255,0.7); margin: 0; line-height: 1.4;

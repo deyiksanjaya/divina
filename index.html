@@ -203,7 +203,7 @@
             </div>
         </div>
     </div>
-    
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
         import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
@@ -217,7 +217,6 @@
           messagingSenderId: "777570372540",
           appId: "1:777570372540:web:6b4f3be1b46dbe9fdcf9b9"
         };
-        
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
@@ -232,19 +231,19 @@
         const connectionIndicator = document.getElementById('connection-indicator');
         const contentWrapper = document.getElementById('wrapper');
         const numpadOverlay = document.getElementById('numpad-overlay');
-        
+
         // --- VARIABEL STATE ---
         let enteredCode = "";
         let isConnected = false;
         let connectionFailed = false;
         let latestData = null;
         let holdTimeout;
-        let isTtsEnabled = false; 
+        let isTtsEnabled = false;
         let currentTextToSpeak = "";
         let ttsTapCount = 0;
         let ttsTapTimer;
-        
-        // --- DATA ---
+
+       // --- DATA ---
         const symbols = [
     { 
         svg: '<svg viewBox="0 0 24 24"><path d="M12,1.75L13.25,8L19,9.25L13.25,10.5L12,16.25L10.75,10.5L5,9.25L10.75,8L12,1.75Z" /></svg>', 
@@ -288,7 +287,6 @@
     }
 ];
 
-
         // --- INISIALISASI ---
         symbols.forEach((item, index) => {
             const li = document.createElement('li');
@@ -298,7 +296,28 @@
             symbolList.appendChild(li);
         });
 
-        // --- FUNGSI-FUNGSI UTAMA ---
+        // Tambahkan efek infinite scroll
+        const originalItems = Array.from(symbolList.children);
+        const cloneCount = 5;
+        for (let i = 0; i < cloneCount; i++) {
+            const cloneStart = originalItems[i].cloneNode(true);
+            const cloneEnd = originalItems[originalItems.length - 1 - i].cloneNode(true);
+            symbolList.insertBefore(cloneEnd, symbolList.firstChild);
+            symbolList.appendChild(cloneStart);
+        }
+
+        symbolList.scrollTop = symbolList.scrollHeight / 2;
+        symbolList.addEventListener('scroll', () => {
+            const scrollRange = symbolList.scrollHeight;
+            const midpoint = scrollRange / 2;
+            const threshold = 100;
+            if (symbolList.scrollTop < threshold) {
+                symbolList.scrollTop += midpoint - threshold;
+            } else if (symbolList.scrollTop > scrollRange - midpoint - threshold) {
+                symbolList.scrollTop -= midpoint - threshold;
+            }
+        });
+// --- FUNGSI-FUNGSI UTAMA ---
         function verifyAndConnect(roomId) {
             get(ref(database, 'rooms/' + roomId + '/presence')).then((snapshot) => {
                 if (snapshot.exists()) {

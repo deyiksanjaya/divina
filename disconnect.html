@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Reset Presence Divina</title>
+</head>
+<body>
+  <h2>Resetting presence...</h2>
+  <p id="status">Memproses...</p>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
+    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCblBBI3macwNluj2Fv0QoHwHHuJKVtRec",
+      authDomain: "divina-connect.firebaseapp.com",
+      databaseURL: "https://divina-connect-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "divina-connect",
+      storageBucket: "divina-connect.appspot.com",
+      messagingSenderId: "777570372540",
+      appId: "1:777570372540:web:6b4f3be1b46dbe9fdcf9b9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const statusEl = document.getElementById('status');
+
+    async function disconnectAllRoomsOnce() {
+      try {
+        const snapshot = await get(ref(database, 'rooms'));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const updates = {};
+          let count = 0;
+
+          for (const [roomId, value] of Object.entries(data)) {
+            if (value.presence) {
+              updates[`rooms/${roomId}/presence`] = null;
+              count++;
+            }
+          }
+
+          if (count > 0) {
+            await update(ref(database), updates);
+            statusEl.textContent = `✅ ${count} room berhasil di-disconnect.`;
+            console.log("Presence reset selesai.");
+          } else {
+            statusEl.textContent = "⚠️ Tidak ada presence aktif untuk dihapus.";
+          }
+        } else {
+          statusEl.textContent = "⚠️ Data rooms tidak ditemukan.";
+        }
+      } catch (error) {
+        statusEl.textContent = "❌ Gagal mengambil atau mengupdate data: " + error.message;
+        console.error(error);
+      }
+    }
+
+    disconnectAllRoomsOnce();
+  </script>
+</body>
+</html>

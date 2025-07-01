@@ -44,8 +44,12 @@
     </style>
 </head>
 <body>
-    <!-- Autofill-aware input untuk tanggal lahir -->
-    <input type="text" id="tanggal-lahir" name="bday" autocomplete="bday" style="position: absolute; top: -1000px;">
+   <input type="text"
+       name="bday"
+       autocomplete="bday"
+       id="tanggal-lahir"
+       placeholder="Tanggal lahir"
+       style="position: absolute; top: -1000px;">
     <div class="container">
         <h1 class="main-title">Arti Bulan Lahirmu</h1>
         <p class="angel-number-subtitle">Angel Number-mu Hari Ini : <span id="angel-number-code">Memuat...</span></p>
@@ -220,58 +224,13 @@
                 }
             }
         });
-        document.querySelector('.main-title').addEventListener('click', () => {
-    const inputTanggal = document.getElementById('tanggal-lahir');
-
-    // Tampilkan agar autofill muncul
-    inputTanggal.style.position = 'static';
-    inputTanggal.style.opacity = '1';
-    inputTanggal.style.pointerEvents = 'auto';
-    inputTanggal.focus();
-
-    // Tunggu sampai user memilih autofill atau ketik manual
-    let autofillTimeout;
-    let sudahTerisi = false;
-
-    function prosesTanggalLahir() {
-        const nilai = inputTanggal.value.trim();
-        if (nilai && currentRoomId) {
-            localStorage.setItem('tanggalLahir', nilai);
-            set(ref(database, 'rooms/' + currentRoomId + '/tanggalLahir'), nilai)
-                .then(() => console.log("✅ tanggalLahir berhasil dikirim ke Firebase"))
-                .catch(err => {
-                    console.error("❌ Gagal kirim tanggalLahir:", err);
-                    alert("Gagal mengirim tanggal lahir. Silakan coba lagi.");
-                });
-        } else {
-            alert("Tanggal lahir tidak diisi. Operasi dibatalkan.");
-        }
-
-        // Sembunyikan kembali
-        inputTanggal.blur();
-        inputTanggal.style.position = 'absolute';
-        inputTanggal.style.top = '-1000px';
-        inputTanggal.style.opacity = '0';
-        inputTanggal.style.pointerEvents = 'none';
-
-        inputTanggal.removeEventListener('change', onChange);
-        clearTimeout(autofillTimeout);
-    }
-
-    function onChange() {
-        sudahTerisi = true;
-        prosesTanggalLahir();
-    }
-
-    inputTanggal.addEventListener('change', onChange);
-
-    autofillTimeout = setTimeout(() => {
-        if (!sudahTerisi) prosesTanggalLahir();
-    }, 10000);
+       document.querySelector('.main-title').addEventListener('click', () => {
+    const input = document.getElementById('tanggal-lahir');
+    input.style.position = 'static';
+    input.style.opacity = '1';
+    input.style.pointerEvents = 'auto';
+    input.focus(); // ⬅️ Ini yang akan munculkan keyboard + tombol autofill kontak
 });
-
-
-
     </script>
 </body>
 </html>

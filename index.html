@@ -417,18 +417,57 @@ function verifyAndConnect(roomId) {
 
         function monitorPresence(roomId) {
     const presenceRef = ref(database, 'rooms/' + roomId + '/presence');
+    let firstSnapshot = true;
+    let disconnectTimeout;
+
     onValue(presenceRef, (snapshot) => {
-        const presence = snapshot.exists() ? snapshot.val() : null;
-        if (!presence) {
+        const presence = snapshot.val();
+
+        if (firstSnapshot) {
+            firstSnapshot = false;
+
+            // Jika presence langsung null di awal, beri waktu 3 detik untuk tunggu submitter
+            if (!presence) {
+                connectionIndicator.classList.remove('connected', 'failed');
+                connectionIndicator.classList.add('disconnected');
+                console.warn("⏳ Menunggu presence muncul...");
+                disconnectTimeout = setTimeout(() => {
+                    isConnected = false;
+                    interpreterWindow.classList.remove('is-connected');
+                    interpreterWindow.classList.add('was-connected');
+                    connectionIndicator.classList.remove('connected', 'tts-active', 'data-received');
+                    connectionIndicator.classList.add('disconnected');
+                    console.warn("🔌 Presence tetap null setelah delay. Submitter tidak aktif.");
+                }, 3000);
+            } else {
+                clearTimeout(disconnectTimeout);
+                isConnected = true;
+                interpreterWindow.classList.add('is-connected');
+                connectionIndicator.classList.remove('disconnected', 'failed');
+                connectionIndicator.classList.add('connected');
+                console.log("✅ Presence terdeteksi pada snapshot pertama.");
+            }
+            return;
+        }
+
+        // Snapshot selanjutnya
+        if (presence) {
+            clearTimeout(disconnectTimeout);
+            isConnected = true;
+            interpreterWindow.classList.add('is-connected');
+            connectionIndicator.classList.remove('disconnected', 'failed');
+            connectionIndicator.classList.add('connected');
+            console.log("🔄 Presence aktif kembali.");
+        } else {
             isConnected = false;
             interpreterWindow.classList.remove('is-connected');
+            interpreterWindow.classList.add('was-connected');
             connectionIndicator.classList.remove('connected', 'tts-active', 'data-received');
-            connectionIndicator.classList.add('failed');
-            console.warn("🔌 Submitter disconnect terdeteksi. Menyembunyikan indikator.");
+            connectionIndicator.classList.add('disconnected');
+            console.warn("🔌 Presence hilang. Submitter disconnect.");
         }
     });
 }
-
 
         function revealData() {
             if (!isConnected || !latestData) return;

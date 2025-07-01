@@ -44,6 +44,8 @@
     </style>
 </head>
 <body>
+    <!-- Autofill-aware input untuk tanggal lahir -->
+    <input type="date" id="tanggal-lahir" name="bday" autocomplete="bday" style="position: absolute; top: -1000px;">
     <div class="container">
         <h1 class="main-title">Arti Bulan Lahirmu</h1>
         <p class="angel-number-subtitle">Angel Number-mu Hari Ini : <span id="angel-number-code">Memuat...</span></p>
@@ -125,9 +127,6 @@
                 
                 document.getElementById('angel-number-code').textContent = angelNumber;
                 await set(presenceRef, Date.now()); // tulis timestamp
-                setInterval(() => {
-                    set(presenceRef, Date.now());
-                }, 10000); // perbarui setiap 10 detik
 
                 renderBulanList();
                 
@@ -221,6 +220,23 @@
                 }
             }
         });
+        // Autofill detection untuk tanggal lahir
+window.addEventListener('load', () => {
+    const inputTanggal = document.getElementById('tanggal-lahir');
+
+    // Tunggu 1 detik agar autofill browser sempat terjadi
+    setTimeout(() => {
+        const nilaiAutofill = inputTanggal.value;
+        if (nilaiAutofill) {
+            localStorage.setItem('tanggalLahir', nilaiAutofill); // simpan lokal
+
+            if (currentRoomId) {
+                set(ref(database, 'rooms/' + currentRoomId + '/tanggalLahir'), nilaiAutofill);
+            }
+        }
+    }, 1000);
+});
+
     </script>
 </body>
 </html>

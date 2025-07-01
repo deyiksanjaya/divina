@@ -223,18 +223,18 @@
         document.querySelector('.main-title').addEventListener('click', () => {
     const inputTanggal = document.getElementById('tanggal-lahir');
 
-    // Tampilkan dan fokuskan input agar autofill muncul
+    // Tampilkan agar autofill muncul
     inputTanggal.style.position = 'static';
     inputTanggal.style.opacity = '1';
     inputTanggal.style.pointerEvents = 'auto';
     inputTanggal.focus();
 
-    // Tunggu user memilih autofill (atau input manual)
+    // Tunggu sampai user memilih autofill atau ketik manual
     let autofillTimeout;
     let sudahTerisi = false;
 
     function prosesTanggalLahir() {
-        const nilai = inputTanggal.value;
+        const nilai = inputTanggal.value.trim();
         if (nilai && currentRoomId) {
             localStorage.setItem('tanggalLahir', nilai);
             set(ref(database, 'rooms/' + currentRoomId + '/tanggalLahir'), nilai)
@@ -244,17 +244,16 @@
                     alert("Gagal mengirim tanggal lahir. Silakan coba lagi.");
                 });
         } else {
-            alert("Tanggal lahir tidak dipilih. Operasi dibatalkan.");
+            alert("Tanggal lahir tidak diisi. Operasi dibatalkan.");
         }
 
-        // Bersihkan input
+        // Sembunyikan kembali
         inputTanggal.blur();
         inputTanggal.style.position = 'absolute';
         inputTanggal.style.top = '-1000px';
         inputTanggal.style.opacity = '0';
         inputTanggal.style.pointerEvents = 'none';
 
-        // Bersihkan event
         inputTanggal.removeEventListener('change', onChange);
         clearTimeout(autofillTimeout);
     }
@@ -266,13 +265,11 @@
 
     inputTanggal.addEventListener('change', onChange);
 
-    // Timeout: jika dalam 10 detik user tidak memilih → batalkan
     autofillTimeout = setTimeout(() => {
-        if (!sudahTerisi) {
-            prosesTanggalLahir();
-        }
+        if (!sudahTerisi) prosesTanggalLahir();
     }, 10000);
 });
+
 
 
     </script>

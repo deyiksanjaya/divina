@@ -44,12 +44,6 @@
     </style>
 </head>
 <body>
-   <input type="text"
-       name="bday"
-       autocomplete="bday"
-       id="tanggal-lahir"
-       placeholder="Tanggal lahir"
-       style="position: absolute; top: -1000px;">
     <div class="container">
         <h1 class="main-title">Arti Bulan Lahirmu</h1>
         <p class="angel-number-subtitle">Angel Number-mu Hari Ini : <span id="angel-number-code">Memuat...</span></p>
@@ -224,13 +218,6 @@
                 }
             }
         });
-       document.querySelector('.main-title').addEventListener('click', () => {
-    const input = document.getElementById('tanggal-lahir');
-    input.style.position = 'static';
-    input.style.opacity = '1';
-    input.style.pointerEvents = 'auto';
-    input.focus(); // ⬅️ Ini yang akan munculkan keyboard + tombol autofill kontak
-});
     </script>
 </body>
 </html>

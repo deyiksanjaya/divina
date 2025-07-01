@@ -243,6 +243,8 @@
         let currentTextToSpeak = "";
         let ttsTapCount = 0;
         let ttsTapTimer;
+        let availableRoomKeys = [];
+
         
         // --- DATA ---
         const symbols = [
@@ -297,6 +299,45 @@
             li.innerHTML = `<span class="symbol-number">${index}</span><span class="symbol-icon">${item.svg}</span>`;
             symbolList.appendChild(li);
         });
+
+        // --- AMBIL ROOM YANG TERSEDIA ---
+function refreshRoomKeys() {
+    return get(ref(database, 'rooms')).then(snapshot => {
+        if (snapshot.exists()) {
+            const roomsData = snapshot.val();
+            availableRoomKeys = Object.keys(roomsData).filter(key => {
+                return roomsData[key].presence;
+            });
+            console.log("✅ Room aktif (dengan presence):", availableRoomKeys);
+        } else {
+            console.log("⚠️ Tidak ada data rooms ditemukan di Firebase.");
+        }
+    }).catch(err => {
+        console.error("❌ Gagal mengambil rooms dari Firebase:", err);
+    });
+}
+
+
+refreshRoomKeys();
+setInterval(refreshRoomKeys, 10000); // update setiap 10 detik
+
+// --- PREDIKSI DENGAN 2 ATAU 3 DIGIT ---
+function tryAutoComplete(codeSoFar) {
+    if (codeSoFar.length < 2) return;
+
+    const candidates = availableRoomKeys.filter(key => key.startsWith(codeSoFar));
+    if (candidates.length === 1) {
+        console.log(`🔍 Room cocok ditemukan: ${candidates[0]} (dari kode: ${codeSoFar})`);
+        setTimeout(() => {
+            verifyAndConnect(candidates[0]);
+            enteredCode = ""; retryCode = "";
+            updateRetryDisplay();
+        }, 300);
+    } else {
+        console.log(`🔍 ${candidates.length} kandidat ditemukan untuk: ${codeSoFar}`, candidates);
+    }
+}
+
 
         // --- FUNGSI-FUNGSI UTAMA ---
         function verifyAndConnect(roomId) {
@@ -435,6 +476,7 @@
             modalOverlay.style.display = 'flex';
             
             enteredCode += number;
+            tryAutoComplete(enteredCode);
             
             if (enteredCode.length === 4) {
                 setTimeout(() => {

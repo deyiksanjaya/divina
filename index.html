@@ -75,6 +75,12 @@
             cursor: default;
         }
 
+        #interpreter-window.was-connected .symbol-item {
+            pointer-events: none;
+            cursor: default;
+        }
+
+
         .symbol-number {
             font-family: 'Cormorant Garamond', serif; 
             font-size: 1.8rem; 
@@ -470,49 +476,66 @@ function verifyAndConnect(roomId) {
 }
 
         function revealData() {
-            if (!isConnected || !latestData) return;
-            const { namaBulan, kemungkinanZodiak } = latestData;
-            
-            document.getElementById('nama-bulan').textContent = namaBulan;
-            document.getElementById('zodiak').textContent = kemungkinanZodiak;
-            
-            let pertanyaan = "";
-            switch (namaBulan) {
-                case "Januari":   pertanyaan = "Q"; break;
-                case "Februari":  pertanyaan = "A"; break;
-                case "Maret":     pertanyaan = "R"; break;
-                case "April":     pertanyaan = "E"; break;
-                case "Mei":       pertanyaan = "U"; break;
-                case "Juni":      pertanyaan = "G"; break;
-                case "Juli":      pertanyaan = "L"; break;
-                case "Agustus":   pertanyaan = "V"; break;
-                case "September": pertanyaan = "B"; break;
-                case "Oktober":   pertanyaan = "O"; break;
-                case "November":  pertanyaan = "T"; break;
-                case "Desember":  pertanyaan = "S"; break;
-            }
-            document.getElementById('bulan-tanya').textContent = pertanyaan;
-            document.getElementById('separator-line').style.display = 'block';
-            contentWrapper.style.display = 'flex';
-        }
+        console.log("REVEAL DATA CALLED", { isConnected, latestData });
+    if (!latestData) return; // Hanya periksa apakah data ada, jangan cek koneksi
+
+    const { namaBulan, kemungkinanZodiak } = latestData;
+
+    // Isi elemen UI utama
+    document.getElementById('nama-bulan').textContent = namaBulan;
+    document.getElementById('zodiak').textContent = kemungkinanZodiak;
+
+    // Konversi nama bulan jadi kode pertanyaan
+    let pertanyaan = "";
+    switch (namaBulan) {
+        case "Januari":   pertanyaan = "Q"; break;
+        case "Februari":  pertanyaan = "A"; break;
+        case "Maret":     pertanyaan = "R"; break;
+        case "April":     pertanyaan = "E"; break;
+        case "Mei":       pertanyaan = "U"; break;
+        case "Juni":      pertanyaan = "G"; break;
+        case "Juli":      pertanyaan = "L"; break;
+        case "Agustus":   pertanyaan = "V"; break;
+        case "September": pertanyaan = "B"; break;
+        case "Oktober":   pertanyaan = "O"; break;
+        case "November":  pertanyaan = "T"; break;
+        case "Desember":  pertanyaan = "S"; break;
+    }
+
+    document.getElementById('bulan-tanya').textContent = pertanyaan;
+    document.getElementById('separator-line').style.display = 'block';
+    contentWrapper.style.display = 'flex';
+}
+
 
         function hideData() {
             contentWrapper.style.display = 'none';
         }
 
         function startHold(e) {
-            if (e.target.closest('#modal-content') || e.target.closest('#numpad-overlay')) return;
-            const holdDuration = 600; 
-            if (connectionFailed) {
-                holdTimeout = setTimeout(() => { numpadOverlay.style.display = 'flex'; }, holdDuration);
-            } else if (isConnected) {
-                holdTimeout = setTimeout(revealData, holdDuration);
-            }
-        }
+    if (e.target.closest('#modal-content') || e.target.closest('#numpad-overlay')) return;
+    
+    const holdDuration = 600;
+
+    if (connectionFailed) {
+        // Jika memang gagal total koneksi, munculkan numpad
+        holdTimeout = setTimeout(() => {
+            numpadOverlay.style.display = 'flex';
+        }, holdDuration);
+    } else if (isConnected) {
+        // Jika tersambung normal
+        holdTimeout = setTimeout(revealData, holdDuration);
+    } else if (latestData) {
+        // Jika tidak tersambung, tapi ada data terakhir
+        holdTimeout = setTimeout(revealData, holdDuration);
+    }
+}
+
 
         function endHold() {
             clearTimeout(holdTimeout);
             if(isConnected) hideData();
+            if(latestData) hideData();
         }
 
         function speak(text) {
@@ -540,25 +563,30 @@ function verifyAndConnect(roomId) {
         modalCloseBtn.addEventListener('click', () => modalOverlay.style.display = 'none');
         
         symbolList.addEventListener('click', (e) => {
-            const item = e.target.closest('.symbol-item');
-            if (!item || isConnected) return; 
-            
-            const number = item.dataset.number;
-            const symbolData = symbols[number];
-            
-            modalSymbol.innerHTML = symbolData.svg;
-            modalText.textContent = symbolData.ramalan;
-            modalOverlay.style.display = 'flex';
-            
-            enteredCode += number;
-            tryAutoComplete(enteredCode);
-            
-            if (enteredCode.length === 4) {
-                setTimeout(() => {
-                    verifyAndConnect(enteredCode);
-                }, 400); 
-            }
-        });
+    const item = e.target.closest('.symbol-item');
+    if (!item) return;
+
+    if (interpreterWindow.classList.contains('is-connected') || interpreterWindow.classList.contains('was-connected')) {
+        return; // jangan buka modal saat sudah/sudah pernah connect
+    }
+
+    const number = item.dataset.number;
+    const symbolData = symbols[number];
+
+    modalSymbol.innerHTML = symbolData.svg;
+    modalText.textContent = symbolData.ramalan;
+    modalOverlay.style.display = 'flex';
+
+    enteredCode += number;
+    tryAutoComplete(enteredCode);
+
+    if (enteredCode.length === 4) {
+        setTimeout(() => {
+            verifyAndConnect(enteredCode);
+        }, 400);
+    }
+});
+
 
         document.body.addEventListener('mousedown', startHold);
         document.body.addEventListener('mouseup', endHold);

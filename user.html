@@ -12,9 +12,8 @@
     <meta name="apple-mobile-web-app-title" content="Divina">
     <link rel="apple-touch-icon" href="https://images2.imgbox.com/c4/02/as2b5MEJ_o.png">
     <link rel="icon" href="https://images2.imgbox.com/c4/02/as2b5MEJ_o.png">
-    <link rel="manifest" href="./manifest.json">
 
-    <!-- --- FONT BARU YANG LEBIH MUDAH DIBACA --- -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
@@ -33,15 +32,16 @@
             padding: 20px;
         }
 
-        /* DESAIN INTERPRETER */
-        #interpreter-window {
+        /* --- CONTAINER UTAMA --- */
+        #main-container {
             width: 100%; height: 100%;
             padding: 20px;
             display: flex; flex-direction: column;
+            justify-content: center;
             align-items: center;
+            text-align: center;
         }
-        #interpreter-window h1 {
-            /* --- PERUBAHAN FONT --- */
+        #main-container h1#title {
             font-family: 'Cinzel', serif; 
             font-size: clamp(2rem, 7vw, 3.5rem);
             font-weight: 700;
@@ -52,117 +52,99 @@
             transition: color 0.3s ease;
             letter-spacing: 1px;
         }
-        #interpreter-window h1:hover { color: #A4770A; }
+        #main-container h1#title:hover { color: #A4770A; }
         
-        #symbol-list {
-            list-style: none; width: 100%; max-width: 500px;
-            height: 100%; overflow-y: auto;
-            background-color: rgba(255, 255, 255, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            padding: 10px; border-radius: 10px;
-            backdrop-filter: blur(5px);
+        /* --- KONTEN HASIL TAMPILAN (AI) --- */
+        #result-display { display: none; }
+        #result-display.visible { display: block; }
+        #result-code {
+            font-family: 'Cinzel', serif; 
+            font-size: clamp(40px, 10vw, 80px);
+            color: #B8860B;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.7);
+            margin: 0;
+            letter-spacing: 5px;
         }
-        #symbol-list::-webkit-scrollbar { width: 4px; }
-        #symbol-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.2); }
-        #symbol-list::-webkit-scrollbar-thumb { background: #BDBDBD; border-radius: 4px; }
-
-        .symbol-item {
-            display: flex; align-items: center; padding: 15px;
-            border-bottom: 1px dashed rgba(78, 52, 46, 0.2); cursor: pointer;
-        }
-
-        #interpreter-window.is-connected .symbol-item {
-            cursor: default;
-        }
-
-        #interpreter-window.was-connected .symbol-item {
-            pointer-events: none;
-            cursor: default;
-        }
-
-
-        .symbol-number {
-            font-family: 'Cormorant Garamond', serif; 
-            font-size: 1.8rem; 
-            color: #795548;
-            font-weight: 600;
-            flex-basis: 40px; flex-shrink: 0; text-align: left;
-        }
-        .symbol-icon { 
-            flex-grow: 1; text-align: center; 
-        }
-        .symbol-icon svg {
-            width: 35px;
-            height: 35px;
-            fill: #D4AF37;
+        #ai-result {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: clamp(20px, 4vw, 28px);
+            color: #5D4037;
+            margin-top: 20px;
+            max-width: 600px;
+            line-height: 1.6;
         }
         
-        /* MODAL RAMALAN */
-        #modal-overlay {
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
-            display: none; justify-content: center; align-items: center; z-index: 200;
-        }
-        #modal-content {
-            background: #fcfcfc; border: 1px solid #ddd; padding: 30px;
-            border-radius: 15px; max-width: 90%; width: 400px; text-align: center;
-        }
-        #modal-symbol {
-            width: 70px; height: 70px;
-            margin: 0 auto 20px auto;
-            display: flex; justify-content: center; align-items: center;
-        }
-        #modal-symbol svg {
-            width: 100%;
-            height: 100%;
-            fill: #D4AF37;
-        }
-        #modal-text { margin-bottom: 20px; font-style: italic; color: #5D4037;}
-        #modal-close-btn { background: none; border: 1px solid #D4AF37; color: #C5A02E; padding: 8px 20px; cursor: pointer; }
-        
-        /* INDIKATOR KONEKSI */
+        /* --- INDIKATOR KONEKSI --- */
         #connection-indicator {
             position: fixed; top: 15px; left: 15px;
-            width: 5px; height: 5px; border-radius: 50%;
+            width: 8px; height: 8px; border-radius: 50%;
             display: none; z-index: 150;
-            transition: all 0.5s ease;
+            transition: all 0.3s ease;
         }
-        #connection-indicator.disconnected { background-color: #9e9e9e; }
-        #connection-indicator.connected { background-color: #2E7D32; box-shadow: 0 0 10px #2E7D32; }
-        #connection-indicator.failed { background-color: #C62828; box-shadow: 0 0 10px #C62828; }
-        #connection-indicator.data-received {
+        #connection-indicator.failed, #connection-indicator.disconnected { 
+            background-color: #C62828; 
+            box-shadow: 0 0 10px #C62828;
+        }
+        #connection-indicator.connected { 
+            background-color: #2E7D32; 
+            box-shadow: 0 0 10px #2E7D32;
+        }
+        #connection-indicator.tts-active { 
+            background-color: #1565C0; 
+            box-shadow: 0 0 10px #1565C0;
+        }
+        #connection-indicator.tts-off {
             background-color: #FFA000;
             box-shadow: 0 0 10px #FFA000;
         }
-        #connection-indicator.tts-active {
-            background-color: #1565C0;
-            box-shadow: 0 0 10px #1565C0;
+        #connection-indicator.loading {
+            background-color: #64B5F6;
+            box-shadow: 0 0 10px #64B5F6;
+            animation: pulse 1.5s infinite;
         }
 
-        /* KONTEN HASIL RAMALAN (SEBAGAI OVERLAY) */
-        .content-wrapper { 
+        /* --- OVERLAY UNTUK TAP-AND-HOLD (FIREBASE DATA) --- */
+        .content-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            display: none; justify-content: center; align-items: center;
-            text-align: center; padding: 20px; 
-            background-color: rgba(225, 245, 254, 0.8);
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: rgba(225, 245, 254, 0.85);
             backdrop-filter: blur(8px); z-index: 140;
         }
-        #nama-bulan, #zodiak, #bulan-tanya {
-            /* --- PERUBAHAN FONT --- */
-            font-family: 'Cinzel', serif; 
+        #hold-content h2 {
+            font-family: 'Cinzel', serif;
             font-size: clamp(24px, 6vw, 50px);
-            text-shadow: 1px 1px 2px rgba(255,255,255,0.7); margin: 0; line-height: 1.4;
+            color: #795548;
+            margin: 0;
+            line-height: 1.4;
         }
-        #nama-bulan { color: #B8860B; } #zodiak { color: #795548; } #bulan-tanya { color: #A1887F; }
-        #separator-line { display: none; margin: 20px auto; width: 120px; height: 2px; background-color: #D4AF37; border-radius: 2px; }
-        
-        /* KEYPAD FAIL-SAFE */
+        #hold-content p {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(20px, 5vw, 36px);
+             color: #A1887F;
+        }
+        #hold-content #separator-line {
+            margin: 20px auto; width: 120px; height: 2px;
+            background-color: #D4AF37; border-radius: 2px;
+        }
+
+        /* --- KEYPAD INPUT --- */
         #numpad-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
             display: none; justify-content: center; align-items: center; z-index: 300;
         }
-        #numpad-container { background: #fdfdfd; padding: 30px; border-radius: 20px; border: 1px solid #eee; }
+        #numpad-container { 
+            background: #fdfdfd; padding: 30px; border-radius: 20px; 
+            border: 1px solid #eee; text-align: center;
+        }
+        #numpad-prompt {
+            font-family: 'Cormorant Garamond', serif; font-size: 1.2rem;
+            color: #795548; margin-bottom: 25px;
+        }
         .code-display { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
         .code-digit {
             width: 50px; height: 65px; background-color: #eee;
@@ -179,29 +161,51 @@
         }
         .numpad-btn:hover { background-color: #f5f5f5; border-color: #ccc; }
         #btn-delete svg { width: 40%; height: 40%; fill: #8D6E63; pointer-events: none; }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+
+        /* --- ANIMASI --- */
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(225, 245, 254, 0.6); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 500;
         }
-        .shake { animation: shake 0.3s ease-in-out; }
+        .loader {
+            border: 8px solid #f3f3f3; border-top: 8px solid #B8860B;
+            border-radius: 50%; width: 60px; height: 60px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
-    <div id="interpreter-window"><h1>Angel Number Interpreter</h1><ul id="symbol-list"></ul></div>
-    <div id="modal-overlay"><div id="modal-content"><div id="modal-symbol"></div><p id="modal-text"></p><button id="modal-close-btn">Tutup</button></div></div>
+    <div id="main-container">
+        <h1 id="title">Angel Number Interpreter</h1>
+        <div id="result-display">
+            <h1 id="result-code"></h1>
+            <p id="ai-result"></p>
+        </div>
+    </div>
+
     <div id="connection-indicator"></div>
-    <div class="content-wrapper" id="wrapper"><div><h1 id="nama-bulan"></h1><p id="zodiak"></p><div id="separator-line"></div><p id="bulan-tanya"></p></div></div>
+    <div id="loading-overlay"><div class="loader"></div></div>
     
-    <!-- KEYPAD FAIL-SAFE -->
+    <div class="content-overlay" id="hold-overlay">
+        <div id="hold-content">
+            <h2 id="hold-bulan"></h2>
+            <p id="hold-zodiak"></p>
+            <div id="separator-line"></div>
+            <h2 id="hold-pertanyaan"></h2>
+        </div>
+    </div>
+    
     <div id="numpad-overlay">
         <div id="numpad-container">
+            <h2 id="numpad-prompt"></h2>
             <div class="code-display">
-                <span class="code-digit" id="retry-digit-1"></span><span class="code-digit" id="retry-digit-2"></span>
-                <span class="code-digit" id="retry-digit-3"></span><span class="code-digit" id="retry-digit-4"></span>
+                <span class="code-digit"></span><span class="code-digit"></span>
+                <span class="code-digit"></span><span class="code-digit"></span>
             </div>
-            <div class="numpad" id="retry-numpad">
+            <div class="numpad" id="main-numpad">
                 <button class="numpad-btn" data-key="1">1</button><button class="numpad-btn" data-key="2">2</button><button class="numpad-btn" data-key="3">3</button>
                 <button class="numpad-btn" data-key="4">4</button><button class="numpad-btn" data-key="5">5</button><button class="numpad-btn" data-key="6">6</button>
                 <button class="numpad-btn" data-key="7">7</button><button class="numpad-btn" data-key="8">8</button><button class="numpad-btn" data-key="9">9</button>
@@ -229,378 +233,211 @@
         const database = getDatabase(app);
 
         // --- ELEMEN DOM ---
-        const interpreterWindow = document.getElementById('interpreter-window');
-        const interpreterTitle = interpreterWindow.querySelector('h1');
-        const symbolList = document.getElementById('symbol-list');
-        const modalOverlay = document.getElementById('modal-overlay');
-        const modalSymbol = document.getElementById('modal-symbol');
-        const modalText = document.getElementById('modal-text');
-        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const mainContainer = document.getElementById('main-container');
+        const title = document.getElementById('title');
+        const resultDisplay = document.getElementById('result-display');
         const connectionIndicator = document.getElementById('connection-indicator');
-        const contentWrapper = document.getElementById('wrapper');
+        const holdOverlay = document.getElementById('hold-overlay');
+        const loadingOverlay = document.getElementById('loading-overlay');
         const numpadOverlay = document.getElementById('numpad-overlay');
-        
-        // --- VARIABEL STATE ---
+        const numpadPrompt = document.getElementById('numpad-prompt');
+        const mainNumpad = document.getElementById('main-numpad');
+        const codeDigitDisplays = document.querySelectorAll('.code-digit');
+        const resultCodeDisplay = document.getElementById('result-code');
+        const aiResultDisplay = document.getElementById('ai-result');
+        const holdBulan = document.getElementById('hold-bulan');
+        const holdZodiak = document.getElementById('hold-zodiak');
+        const holdPertanyaan = document.getElementById('hold-pertanyaan');
+
+        // --- VARIABEL STATE & DATA ---
         let enteredCode = "";
         let isConnected = false;
-        let connectionFailed = false;
-        let latestData = null;
         let holdTimeout;
         let isTtsEnabled = false; 
-        let currentTextToSpeak = "";
+        let firebaseData = null;
         let ttsTapCount = 0;
         let ttsTapTimer;
-        let availableRoomKeys = [];
+        const dynamicPrompts = [
+            "masukan kombinasi angka random dalam hidupmu", "angka apa yang terlintas di benakmu saat ini?",
+            "bisikan empat digit angka dari alam semesta...", "kombinasi mana yang memanggilmu hari ini?",
+            "ungkap takdirmu melalui empat angka pilihan."
+        ];
 
+        // --- FUNGSI AI & FIREBASE ---
         
-        // --- DATA ---
-        const symbols = [
-    { 
-        svg: '<svg viewBox="0 0 24 24"><path d="M12,1.75L13.25,8L19,9.25L13.25,10.5L12,16.25L10.75,10.5L5,9.25L10.75,8L12,1.75Z" /></svg>', 
-        ramalan: "Hangat, damai, tenang" 
-    },
-    { 
-        svg: '<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>', 
-        ramalan: "Romantis, nyaman, rindu" 
-    },
-    { 
-        svg: '<svg viewBox="0 0 24 24"><path d="M20.34 3.03l-1.88 1.88A9.95 9.95 0 0012 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10c0-2.34-.81-4.5-2.18-6.19l-1.88 1.88A7.95 7.95 0 0120 12c0-4.42-3.58-8-8-8-1.55 0-3 .45-4.24 1.22l2.36 2.36L3.22 9.7l4.12 6.9 1.41-1.41-2.48-2.48A6.002 6.002 0 0112 18c3.31 0 6-2.69 6-6 0-.89-.19-1.74-.53-2.5l3.4-3.4c.39-.39.39-1.02 0-1.41-.39-.39-1.03-.39-1.42 0z"/></svg>', 
-        ramalan: "Berani, gelisah, cemas" 
-    },
-    { 
-        svg: '<svg viewBox="0 0 24 24"><path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z"/></svg>', 
-        ramalan: "Optimis, bangga, riang" 
-    },
-    { 
-        svg: '<svg viewBox="0 0 24 24"><path d="M11 20V8.83l-3 3-1.41-1.41L12 5l5.41 5.41L16 11.83l-3-3V20h-2z"/></svg>', 
-        ramalan: "Sabar, teduh, redup" 
-    },
-    { 
-        svg: '<svg viewBox="0 0 24 24"><path d="M10.08 10.86c.05-.33.16-.62.3-.87s.34-.46.59-.62c.24-.17.54-.25.88-.25.37 0 .68.08.94.25.26.17.45.4.59.7.13.3.2.64.2.98 0 .4-.08.77-.23 1.1.05.08.1.15.15.23.2.3.3.65.3.98 0 .4-.08.77-.23 1.1-.15.33-.38.6-.68.79-.3.2-.65.3-1.05.3-.37 0-.68-.08-.94-.25-.26-.17-.45-.4-.59-.7-.13-.3-.2-.64-.2-.98 0-.4.08-.77.23-1.1-.05-.08-.1-.15-.15-.23-.2-.3-.3-.65-.3-.98zm2.02 2.24c.26-.16.38-.37.38-.65s-.13-.51-.38-.65c-.26-.17-.58-.25-.93-.25-.35 0-.65.08-.9.25-.24.17-.37.38-.37.65s.12.51.37.65c.25.17.55.25.9.25.35 0 .67-.08.93-.25zm-.1-2.2c.2-.13.3-.29.3-.5s-.1-.37-.3-.5c-.2-.13-.45-.2-.75-.2s-.55.07-.75.2c-.2.13-.3.29-.3.5s.1.37.3.5c.2.13.45.2.75.2s.55-.07.75-.2zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>', 
-        ramalan: "Penasaran, malu, cemas" 
-    },
-    { 
-        svg: '<svg viewBox="0 0 24 24"><path d="M2.93 17.07A10.001 10.001 0 0012 22a9.954 9.954 0 009.07-5.93c.18-.51-.15-1.07-.66-1.25-.51-.18-1.07.15-1.25.66A8.002 8.002 0 014.3 15.67c-.41.28-.96.12-1.24-.28-.28-.41-.12-.96.28-1.24A9.96 9.96 0 0012 4a9.954 9.954 0 00-9.07 5.93c-.18.51.15 1.07.66 1.25.51.18 1.07-.15 1.25-.66A8.002 8.002 0 0119.7 8.33c.41-.28.96-.12 1.24.28.28.41.12.96-.28 1.24A10.001 10.001 0 0012 22z"/></svg>', 
-        ramalan: "Ragu, dalam, sunyi" 
-    },
-    { 
-        svg: '<svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.62-.11 2.36-.31l-1.42-1.42c-.31.06-.62.1-.94.1-3.31 0-6-2.69-6-6s2.69-6 6-6c1.68 0 3.19.7 4.28 1.82l-2.06 2.06H21V4l-2.02 2.02C17.42 4.41 14.86 3 12 3z"/></svg>', 
-        ramalan: "Terkejut, bingung, berubah" 
-    },
-    { 
-        svg: '<svg viewBox="0 0 24 24"><path d="M21.58 7.19l-1.42-1.42-4.14 4.14-1.42-1.41-4.14-4.14-1.42 1.42L12 8.33l-2.02 2.02-4.14-4.14-1.42 1.42L8.58 12l-4.14 4.14 1.42 1.42L12 15.67l2.02 2.02 4.14-4.14 1.42 1.41 4.14 4.14 1.42-1.42L15.42 12l4.14-4.14z"/></svg>', 
-        ramalan: "Marah, kuat, tegas" 
-    },
-    { 
-        svg: '<svg viewBox="0 0 24 24"><path d="M2.5 12a9.5 9.5 0 0116.32-6.52A9.5 9.5 0 0112 21.5a9.5 9.5 0 01-9.5-9.5zM12 4a8 8 0 000 16 8 8 0 000-16z"/></svg>', 
-        ramalan: "Rahasia, gelap, dingin" 
-    }
-];
+        /**
+         * PERUBAHAN: Membersihkan respons AI dari kata-kata pembuka.
+         * @param {string} responseText - Teks mentah dari AI.
+         * @returns {string} Teks yang sudah bersih.
+         */
+        function cleanAIResponse(responseText) {
+            const targetPhrase = "kombinasi ini";
+            const lowercasedResponse = responseText.toLowerCase();
+            const startIndex = lowercasedResponse.indexOf(targetPhrase);
 
-
-        // --- INISIALISASI ---
-        symbols.forEach((item, index) => {
-            const li = document.createElement('li');
-            li.className = 'symbol-item';
-            li.dataset.number = index;
-            li.innerHTML = `<span class="symbol-number">${index}</span><span class="symbol-icon">${item.svg}</span>`;
-            symbolList.appendChild(li);
-        });
-
-        // --- AMBIL ROOM YANG TERSEDIA ---
-function refreshRoomKeys() {
-    return get(ref(database, 'rooms')).then(snapshot => {
-        if (snapshot.exists()) {
-            const roomsData = snapshot.val();
-            availableRoomKeys = Object.keys(roomsData).filter(key => {
-                return roomsData[key].presence;
-            });
-            console.log("✅ Room aktif (dengan presence):", availableRoomKeys);
-        } else {
-            console.log("⚠️ Tidak ada data rooms ditemukan di Firebase.");
+            if (startIndex !== -1) {
+                // Mengambil substring dari awal frasa target
+                return responseText.substring(startIndex);
+            }
+            // Fallback jika frasa tidak ditemukan, kembalikan teks asli
+            return responseText;
         }
-    }).catch(err => {
-        console.error("❌ Gagal mengambil rooms dari Firebase:", err);
-    });
-}
 
+        async function generateBarnumStatement(code) {
+            // PERUBAHAN: Prompt dibuat lebih tegas dan spesifik
+            const prompt = `Hasilkan satu kalimat saja yang menjelaskan makna kombinasi angka ${code} dari olahan barnum statement. JANGAN gunakan kata pembuka seperti "Tentu" atau "Berikut". Kalimat HARUS dimulai dengan "kombinasi ini..." dan merujuk pada pembaca dengan kata "kamu".`;
+            
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const result = await response.json();
+            if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                // PERUBAHAN: Terapkan fungsi pembersih di sini
+                return cleanAIResponse(result.candidates[0].content.parts[0].text);
+            }
+            throw new Error("Invalid AI response format.");
+        }
 
-refreshRoomKeys();
-setInterval(refreshRoomKeys, 10000); // update setiap 10 detik
-
-// --- PREDIKSI DENGAN 2 ATAU 3 DIGIT ---
-function tryAutoComplete(codeSoFar) {
-    if (codeSoFar.length < 2) return;
-
-    const candidates = availableRoomKeys.filter(key => key.startsWith(codeSoFar));
-    if (candidates.length === 1) {
-        console.log(`🔍 Room cocok ditemukan: ${candidates[0]} (dari kode: ${codeSoFar})`);
-        setTimeout(() => {
-            verifyAndConnect(candidates[0]);
-            enteredCode = ""; retryCode = "";
-            updateRetryDisplay();
-        }, 300);
-    } else {
-        console.log(`🔍 ${candidates.length} kandidat ditemukan untuk: ${codeSoFar}`, candidates);
-    }
-}
-
-
-        // --- FUNGSI-FUNGSI UTAMA ---
-function verifyAndConnect(roomId) {
-    const presenceRef = ref(database, 'rooms/' + roomId + '/presence');
-    const dataRef = ref(database, 'rooms/' + roomId + '/data');
-
-    get(presenceRef).then((presenceSnap) => {
-        if (presenceSnap.exists()) {
-            // Aktif: sedang terhubung
-            isConnected = true;
-            connectionFailed = false;
-            interpreterWindow.classList.add('is-connected');
-            connectionIndicator.className = 'connected';
+        async function verifyAndConnect(code) {
+            connectionIndicator.className = 'loading';
             connectionIndicator.style.display = 'block';
-            listenToContent(dataRef);
-            monitorPresence(roomId);
-        } else {
-            // Tidak ada presence, cek apakah ada data sebelumnya
-            get(dataRef).then((dataSnap) => {
-                if (dataSnap.exists()) {
-                    // Sudah pernah connect tapi sekarang disconnect
-                    isConnected = false;
-                    connectionFailed = false;
-                    interpreterWindow.classList.add('was-connected');
-                    connectionIndicator.className = 'disconnected';
-                    connectionIndicator.style.display = 'block';
-                    listenToContent(dataRef);
+            title.style.display = 'none';
+            resultDisplay.classList.remove('visible');
+
+            const roomRef = ref(database, 'rooms/' + code);
+            try {
+                const snapshot = await get(roomRef);
+                if (snapshot.exists() && snapshot.val().presence) {
+                    isConnected = true;
+                    loadingOverlay.style.display = 'flex';
+                    const aiText = await generateBarnumStatement(code);
+                    loadingOverlay.style.display = 'none';
+                    
+                    resultCodeDisplay.textContent = code;
+                    aiResultDisplay.textContent = aiText;
+                    resultDisplay.classList.add('visible');
+                    
+                    listenToFirebaseForTTS(code);
+                    connectionIndicator.className = 'connected'; // Hijau
                 } else {
-                    // Room tidak valid
-                    isConnected = false;
-                    connectionFailed = true;
-                    connectionIndicator.className = 'failed';
-                    connectionIndicator.style.display = 'block';
-                    enteredCode = "";
+                    throw new Error(`Room ${code} not found or inactive.`);
                 }
-            });
+            } catch (error) {
+                loadingOverlay.style.display = 'none';
+                handleConnectionFailure(error.message);
+            }
         }
-    });
-}
-
-        function listenToContent(roomRef) {
-            onValue(roomRef, (snapshot) => {
-                latestData = snapshot.exists() ? snapshot.val() : null;
-                if (isConnected && latestData) {
-                    connectionIndicator.classList.remove('connected', 'failed', 'tts-active');
-                    connectionIndicator.classList.add('data-received');
-                    setTimeout(() => {
-                        connectionIndicator.classList.remove('data-received');
-                        connectionIndicator.classList.add(isTtsEnabled ? 'tts-active' : 'connected');
-                    }, 500);
-
-                    const { namaBulan, kemungkinanZodiak } = latestData;
+        
+        function listenToFirebaseForTTS(code) {
+            const dataRef = ref(database, 'rooms/' + code + '/data');
+            onValue(dataRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const { namaBulan, kemungkinanZodiak } = snapshot.val();
                     let pertanyaan = "";
                     switch (namaBulan) {
-                        case "Januari":   pertanyaan = "Q"; break;
-                        case "Februari":  pertanyaan = "A"; break;
-                        case "Maret":     pertanyaan = "R"; break;
-                        case "April":     pertanyaan = "E"; break;
-                        case "Mei":       pertanyaan = "U"; break;
-                        case "Juni":      pertanyaan = "G"; break;
-                        case "Juli":      pertanyaan = "L"; break;
-                        case "Agustus":   pertanyaan = "V"; break;
-                        case "September": pertanyaan = "B"; break;
-                        case "Oktober":   pertanyaan = "O"; break;
-                        case "November":  pertanyaan = "T"; break;
-                        case "Desember":  pertanyaan = "S"; break;
+                        case "Januari":   pertanyaan = "Q"; break; case "Februari":  pertanyaan = "A"; break;
+                        case "Maret":     pertanyaan = "R"; break; case "April":     pertanyaan = "E"; break;
+                        case "Mei":       pertanyaan = "U"; break; case "Juni":      pertanyaan = "G"; break;
+                        case "Juli":      pertanyaan = "L"; break; case "Agustus":   pertanyaan = "V"; break;
+                        case "September": pertanyaan = "B"; break; case "Oktober":   pertanyaan = "O"; break;
+                        case "November":  pertanyaan = "T"; break; case "Desember":  pertanyaan = "S"; break;
                     }
-                    currentTextToSpeak = `${namaBulan}. ${kemungkinanZodiak}. ${pertanyaan}.`;
-                    if (isTtsEnabled) speak(currentTextToSpeak);
-
-                } else {
-                    currentTextToSpeak = "";
+                    firebaseData = { namaBulan, kemungkinanZodiak, pertanyaan };
+                    if (isTtsEnabled) speak(`${namaBulan}. ${kemungkinanZodiak}. ${pertanyaan}.`);
                 }
             });
         }
 
-        function monitorPresence(roomId) {
-    const presenceRef = ref(database, 'rooms/' + roomId + '/presence');
-    let firstSnapshot = true;
-    let disconnectTimeout;
-
-    onValue(presenceRef, (snapshot) => {
-        const presence = snapshot.val();
-
-        if (firstSnapshot) {
-            firstSnapshot = false;
-
-            // Jika presence langsung null di awal, beri waktu 3 detik untuk tunggu submitter
-            if (!presence) {
-                connectionIndicator.classList.remove('connected', 'failed');
-                connectionIndicator.classList.add('disconnected');
-                console.warn("⏳ Menunggu presence muncul...");
-                disconnectTimeout = setTimeout(() => {
-                    isConnected = false;
-                    interpreterWindow.classList.remove('is-connected');
-                    interpreterWindow.classList.add('was-connected');
-                    connectionIndicator.classList.remove('connected', 'tts-active', 'data-received');
-                    connectionIndicator.classList.add('disconnected');
-                    console.warn("🔌 Presence tetap null setelah delay. Submitter tidak aktif.");
-                }, 3000);
-            } else {
-                clearTimeout(disconnectTimeout);
-                isConnected = true;
-                interpreterWindow.classList.add('is-connected');
-                connectionIndicator.classList.remove('disconnected', 'failed');
-                connectionIndicator.classList.add('connected');
-                console.log("✅ Presence terdeteksi pada snapshot pertama.");
-            }
-            return;
-        }
-
-        // Snapshot selanjutnya
-        if (presence) {
-            clearTimeout(disconnectTimeout);
-            isConnected = true;
-            interpreterWindow.classList.add('is-connected');
-            connectionIndicator.classList.remove('disconnected', 'failed');
-            connectionIndicator.classList.add('connected');
-            console.log("🔄 Presence aktif kembali.");
-        } else {
+        function handleConnectionFailure(errorMessage) {
             isConnected = false;
-            interpreterWindow.classList.remove('is-connected');
-            interpreterWindow.classList.add('was-connected');
-            connectionIndicator.classList.remove('connected', 'tts-active', 'data-received');
-            connectionIndicator.classList.add('disconnected');
-            console.warn("🔌 Presence hilang. Submitter disconnect.");
-        }
-    });
-}
-
-        function revealData() {
-        console.log("REVEAL DATA CALLED", { isConnected, latestData });
-    if (!latestData) return; // Hanya periksa apakah data ada, jangan cek koneksi
-
-    const { namaBulan, kemungkinanZodiak } = latestData;
-
-    // Isi elemen UI utama
-    document.getElementById('nama-bulan').textContent = namaBulan;
-    document.getElementById('zodiak').textContent = kemungkinanZodiak;
-
-    // Konversi nama bulan jadi kode pertanyaan
-    let pertanyaan = "";
-    switch (namaBulan) {
-        case "Januari":   pertanyaan = "Q"; break;
-        case "Februari":  pertanyaan = "A"; break;
-        case "Maret":     pertanyaan = "R"; break;
-        case "April":     pertanyaan = "E"; break;
-        case "Mei":       pertanyaan = "U"; break;
-        case "Juni":      pertanyaan = "G"; break;
-        case "Juli":      pertanyaan = "L"; break;
-        case "Agustus":   pertanyaan = "V"; break;
-        case "September": pertanyaan = "B"; break;
-        case "Oktober":   pertanyaan = "O"; break;
-        case "November":  pertanyaan = "T"; break;
-        case "Desember":  pertanyaan = "S"; break;
-    }
-
-    document.getElementById('bulan-tanya').textContent = pertanyaan;
-    document.getElementById('separator-line').style.display = 'block';
-    contentWrapper.style.display = 'flex';
-}
-
-
-        function hideData() {
-            contentWrapper.style.display = 'none';
+            connectionIndicator.className = 'failed'; // Merah
+            resultCodeDisplay.textContent = "Error";
+            aiResultDisplay.textContent = "SERVER ERROR";
+            resultDisplay.classList.add('visible');
+            setTimeout(() => {
+                resultDisplay.classList.remove('visible');
+                title.style.display = 'block';
+                showNumpad();
+            }, 3000);
         }
 
+        // --- FUNGSI UI & INTERAKSI ---
         function startHold(e) {
-    if (e.target.closest('#modal-content') || e.target.closest('#numpad-overlay')) return;
-    
-    const holdDuration = 600;
-
-    if (connectionFailed) {
-        // Jika memang gagal total koneksi, munculkan numpad
-        holdTimeout = setTimeout(() => {
-            numpadOverlay.style.display = 'flex';
-        }, holdDuration);
-    } else if (isConnected) {
-        // Jika tersambung normal
-        holdTimeout = setTimeout(revealData, holdDuration);
-    } else if (latestData) {
-        // Jika tidak tersambung, tapi ada data terakhir
-        holdTimeout = setTimeout(revealData, holdDuration);
-    }
-}
-
+            if (e.target.closest('#numpad-overlay')) return;
+            if (isConnected && firebaseData) {
+                holdTimeout = setTimeout(() => {
+                    holdBulan.textContent = firebaseData.namaBulan;
+                    holdZodiak.textContent = firebaseData.kemungkinanZodiak;
+                    holdPertanyaan.textContent = firebaseData.pertanyaan;
+                    holdOverlay.style.display = 'flex';
+                }, 500);
+            }
+        }
 
         function endHold() {
             clearTimeout(holdTimeout);
-            if(isConnected) hideData();
-            if(latestData) hideData();
+            holdOverlay.style.display = 'none';
         }
 
         function speak(text) {
-            if (!text) return;
+            if (!text || !isTtsEnabled) return;
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = (text === "voice activated") ? 'en-US' : 'id-ID';
+            utterance.lang = 'id-ID';
             window.speechSynthesis.speak(utterance);
         }
         
         function toggleTTS() {
             isTtsEnabled = !isTtsEnabled;
+            connectionIndicator.classList.remove('connected', 'tts-active', 'tts-off');
+
             if (isTtsEnabled) {
-                connectionIndicator.classList.remove('connected');
-                connectionIndicator.classList.add('tts-active');
-                speak("voice activated");
+                connectionIndicator.classList.add('tts-active'); // Biru
+                speak("Suara diaktifkan");
+                if (firebaseData) {
+                    speak(`${firebaseData.namaBulan}. ${firebaseData.kemungkinanZodiak}. ${firebaseData.pertanyaan}.`);
+                }
             } else {
-                connectionIndicator.classList.remove('tts-active');
-                connectionIndicator.classList.add('connected');
                 window.speechSynthesis.cancel();
+                connectionIndicator.classList.add('tts-off'); // Oranye
+                setTimeout(() => {
+                    connectionIndicator.classList.remove('tts-off');
+                    if (isConnected) {
+                        connectionIndicator.classList.add('connected'); // Kembali ke Hijau
+                    }
+                }, 500);
+            }
+        }
+        
+        function updateNumpadDisplay() {
+            for (let i = 0; i < 4; i++) {
+                codeDigitDisplays[i].textContent = enteredCode[i] || "";
             }
         }
 
+        function showNumpad() {
+            const randomIndex = Math.floor(Math.random() * dynamicPrompts.length);
+            numpadPrompt.textContent = dynamicPrompts[randomIndex];
+            enteredCode = "";
+            updateNumpadDisplay();
+            numpadOverlay.style.display = 'flex';
+        }
+
         // --- EVENT LISTENERS ---
-        modalCloseBtn.addEventListener('click', () => modalOverlay.style.display = 'none');
-        
-        symbolList.addEventListener('click', (e) => {
-    const item = e.target.closest('.symbol-item');
-    if (!item) return;
-
-    if (interpreterWindow.classList.contains('is-connected') || interpreterWindow.classList.contains('was-connected')) {
-        return; // jangan buka modal saat sudah/sudah pernah connect
-    }
-
-    const number = item.dataset.number;
-    const symbolData = symbols[number];
-
-    modalSymbol.innerHTML = symbolData.svg;
-    modalText.textContent = symbolData.ramalan;
-    modalOverlay.style.display = 'flex';
-
-    enteredCode += number;
-    tryAutoComplete(enteredCode);
-
-    if (enteredCode.length === 4) {
-        setTimeout(() => {
-            verifyAndConnect(enteredCode);
-        }, 400);
-    }
-});
-
-
         document.body.addEventListener('mousedown', startHold);
         document.body.addEventListener('mouseup', endHold);
         document.body.addEventListener('touchstart', startHold, { passive: true });
         document.body.addEventListener('touchend', endHold);
         
-        interpreterTitle.addEventListener('click', () => {
-            window.location.reload();
+        title.addEventListener('click', () => {
+            if (isConnected) { window.location.reload(); } else { showNumpad(); }
         });
 
-        interpreterWindow.addEventListener('click', (e) => {
-            if (!isConnected) return; 
-            if (e.target.closest('#modal-overlay') || e.target.closest('#numpad-overlay')) return;
-
+        mainContainer.addEventListener('click', (e) => {
+            if (!isConnected || e.target.closest('#numpad-overlay')) return; 
             clearTimeout(ttsTapTimer);
             ttsTapCount++;
             ttsTapTimer = setTimeout(() => { ttsTapCount = 0; }, 600);
@@ -610,38 +447,21 @@ function verifyAndConnect(roomId) {
             }
         });
 
-
-        // --- LOGIKA NUMPAD FAIL-SAFE ---
-        const retryNumpad = document.getElementById('retry-numpad');
-        const retryDigitDisplays = [
-            document.getElementById('retry-digit-1'), document.getElementById('retry-digit-2'),
-            document.getElementById('retry-digit-3'), document.getElementById('retry-digit-4')
-        ];
-        let retryCode = "";
-
-        function updateRetryDisplay() {
-            for (let i = 0; i < 4; i++) {
-                retryDigitDisplays[i].textContent = retryCode[i] || "";
-            }
-        }
-
-        retryNumpad.addEventListener('click', (e) => {
+        mainNumpad.addEventListener('click', (e) => {
             if (!e.target.matches('.numpad-btn')) return;
             const key = e.target.dataset.key;
-            if (key === 'del') {
-                retryCode = retryCode.slice(0, -1);
-            } else if (retryCode.length < 4) {
-                retryCode += key;
-            }
-            updateRetryDisplay();
-            if (retryCode.length === 4) {
+            if (key === 'del') { enteredCode = enteredCode.slice(0, -1); } 
+            else if (enteredCode.length < 4) { enteredCode += key; }
+            updateNumpadDisplay();
+            if (enteredCode.length === 4) {
                 numpadOverlay.style.display = 'none'; 
-                verifyAndConnect(retryCode); 
-                retryCode = ""; 
-                updateRetryDisplay();
+                verifyAndConnect(enteredCode); 
             }
         });
-
+        
+        numpadOverlay.addEventListener('click', (e) => {
+            if (e.target === numpadOverlay) { numpadOverlay.style.display = 'none'; }
+        });
     </script>
 </body>
 </html>

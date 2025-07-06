@@ -265,37 +265,29 @@
 
         // --- FUNGSI AI & FIREBASE ---
         
-        /**
-         * PERUBAHAN: Membersihkan respons AI dari kata-kata pembuka.
-         * @param {string} responseText - Teks mentah dari AI.
-         * @returns {string} Teks yang sudah bersih.
-         */
         function cleanAIResponse(responseText) {
             const targetPhrase = "kombinasi ini";
             const lowercasedResponse = responseText.toLowerCase();
             const startIndex = lowercasedResponse.indexOf(targetPhrase);
 
             if (startIndex !== -1) {
-                // Mengambil substring dari awal frasa target
                 return responseText.substring(startIndex);
             }
-            // Fallback jika frasa tidak ditemukan, kembalikan teks asli
             return responseText;
         }
 
         async function generateBarnumStatement(code) {
-            // PERUBAHAN: Prompt dibuat lebih tegas dan spesifik
             const prompt = `Hasilkan satu kalimat saja yang menjelaskan makna kombinasi angka ${code} dari olahan barnum statement. JANGAN gunakan kata pembuka seperti "Tentu" atau "Berikut". Kalimat HARUS dimulai dengan "kombinasi ini..." dan merujuk pada pembaca dengan kata "kamu".`;
             
             let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
             const payload = { contents: chatHistory };
-            const apiKey = "";
+            // PERUBAHAN: Kunci API Anda telah dimasukkan di sini
+            const apiKey = "AIzaSyAbmZ1Y64hK4QhIhrHyVdn5ycIk4C7I2io";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const result = await response.json();
             if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
-                // PERUBAHAN: Terapkan fungsi pembersih di sini
                 return cleanAIResponse(result.candidates[0].content.parts[0].text);
             }
             throw new Error("Invalid AI response format.");

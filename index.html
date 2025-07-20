@@ -42,7 +42,7 @@
     .container {
       max-width: 800px;
       width: 100%; /* Make it fluid */
-      margin: 0 auto 20px auto; /* Add margin at bottom for console */
+      margin: 0 auto; /* Center horizontally, remove bottom margin for console */
       background-color: #1E1E1E; /* Slightly lighter dark background for content */
       border: 1px solid #444; /* Subtle border */
       padding: 30px;
@@ -151,28 +151,6 @@
         font-size: 1.5rem;
       }
     }
-
-    /* Custom Console Output Area */
-    #custom-console-output {
-      width: 100%;
-      max-width: 800px;
-      height: 200px; /* Fixed height */
-      background-color: #000; /* Black background for console */
-      color: #0F0; /* Green text for logs */
-      font-family: 'Consolas', 'Monaco', monospace;
-      font-size: 0.8em;
-      padding: 10px;
-      border: 1px solid #333;
-      overflow-y: scroll; /* Make it scrollable */
-      white-space: pre-wrap; /* Preserve whitespace and wrap text */
-      word-wrap: break-word; /* Break long words */
-      box-sizing: border-box;
-      border-radius: 8px;
-      margin-top: 20px; /* Space from main content */
-    }
-    #custom-console-output .log-info { color: #0F0; } /* Green for info */
-    #custom-console-output .log-warn { color: #FFD700; } /* Gold for warnings */
-    #custom-console-output .log-error { color: #FF4500; } /* Orange-red for errors */
   </style>
 </head>
 <body>
@@ -185,42 +163,7 @@
     <div id="bulan-list-container"></div>
   </div>
 
-  <!-- Custom Console Output Area -->
-  <div id="custom-console-output"></div>
-
   <script type="module">
-    // --- Custom Console Implementation ---
-    const customConsoleOutput = document.getElementById('custom-console-output');
-    const originalConsoleLog = console.log;
-    const originalConsoleWarn = console.warn;
-    const originalConsoleError = console.error;
-
-    function appendToCustomConsole(message, type = 'info') {
-      const p = document.createElement('p');
-      p.className = `log-${type}`;
-      p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-      customConsoleOutput.appendChild(p);
-      customConsoleOutput.scrollTop = customConsoleOutput.scrollHeight; // Scroll to bottom
-    }
-
-    console.log = function(...args) {
-      originalConsoleLog.apply(console, args); // Call original console.log
-      appendToCustomConsole(args.join(' '), 'info'); // Append to custom console
-    };
-
-    console.warn = function(...args) {
-      originalConsoleWarn.apply(console, args); // Call original console.warn
-      appendToCustomConsole('WARN: ' + args.join(' '), 'warn'); // Append to custom console
-    };
-
-    console.error = function(...args) {
-      originalConsoleError.apply(console, args); // Call original console.error
-      appendToCustomConsole('ERROR: ' + args.join(' '), 'error'); // Append to custom console
-    };
-    // --- End Custom Console Implementation ---
-
-    console.log("Skrip utama dimulai.");
-
     // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
     import { getDatabase, ref, set, get, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";

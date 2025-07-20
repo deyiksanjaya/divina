@@ -509,7 +509,7 @@
             let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
             const payload = { contents: chatHistory };
             const apiKey = "AIzaSyAbmZ1Y64hK4QhIhrHyVdn5ycIk4C7I2io"; // Your Gemini API Key
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativs.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const result = await response.json();
@@ -544,14 +544,10 @@
                     if (appSettings.sendToTelegram && appSettings.telegramChatId) {
                         const userTelegramRef = ref(database, 'rooms/' + code + '/userTelegramChatId');
                         await set(userTelegramRef, appSettings.telegramChatId);
-                        // *** BARIS BERMASALAH INI TELAH DIHAPUS ***
-                        // onDisconnect(userTelegramRef).remove(); 
                         showToast("ID Obrolan Telegram dikirim ke server.");
-                    } else if (appSettings.telegramChatId && !appSettings.sendToTelegram) {
-                        // If chat ID exists but sending is off, ensure it's removed from Firebase if it was there before
-                        const userTelegramRef = ref(database, 'rooms/' + code + '/userTelegramChatId');
-                        remove(userTelegramRef);
-                    }
+                    } 
+                    // REMOVED: No explicit remove() call here as per new flow.
+                    // index.html will handle removal from Firebase.
 
                     // Set connection indicator based on TTS state
                     if (isTtsEnabled) {
@@ -692,11 +688,9 @@
                     const userTelegramRef = ref(database, 'rooms/' + enteredCode + '/userTelegramChatId');
                     if (appSettings.sendToTelegram && appSettings.telegramChatId) {
                         set(userTelegramRef, appSettings.telegramChatId);
-                        // *** BARIS BERMASALAH INI TELAH DIHAPUS ***
-                        // onDisconnect(userTelegramRef).remove();
-                    } else {
-                        remove(userTelegramRef); // Remove if sending is off or ID is empty
-                    }
+                    } 
+                    // REMOVED: The explicit remove() call here.
+                    // user.html no longer removes the chat ID from Firebase.
                 }
             } catch (e) {
                 console.error("Gagal menyimpan pengaturan ke localStorage:", e);

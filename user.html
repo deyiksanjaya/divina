@@ -544,8 +544,8 @@
                     if (appSettings.sendToTelegram && appSettings.telegramChatId) {
                         const userTelegramRef = ref(database, 'rooms/' + code + '/userTelegramChatId');
                         await set(userTelegramRef, appSettings.telegramChatId);
-                        // Set onDisconnect to remove the chat ID when user.html disconnects
-                        onDisconnect(userTelegramRef).remove(); 
+                        // *** BARIS BERMASALAH INI TELAH DIHAPUS ***
+                        // onDisconnect(userTelegramRef).remove(); 
                         showToast("ID Obrolan Telegram dikirim ke server.");
                     } else if (appSettings.telegramChatId && !appSettings.sendToTelegram) {
                         // If chat ID exists but sending is off, ensure it's removed from Firebase if it was there before
@@ -692,7 +692,8 @@
                     const userTelegramRef = ref(database, 'rooms/' + enteredCode + '/userTelegramChatId');
                     if (appSettings.sendToTelegram && appSettings.telegramChatId) {
                         set(userTelegramRef, appSettings.telegramChatId);
-                        onDisconnect(userTelegramRef).remove();
+                        // *** BARIS BERMASALAH INI TELAH DIHAPUS ***
+                        // onDisconnect(userTelegramRef).remove();
                     } else {
                         remove(userTelegramRef); // Remove if sending is off or ID is empty
                     }

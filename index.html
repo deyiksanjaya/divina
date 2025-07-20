@@ -33,15 +33,16 @@
       line-height: 1.7;
       padding: 20px;
       display: flex;
-      justify-content: center;
-      align-items: flex-start; /* Align to top */
+      flex-direction: column; /* Arrange items vertically */
+      justify-content: flex-start; /* Align to top */
+      align-items: center; /* Center horizontally */
       min-height: 100vh; /* Ensure body takes full viewport height */
     }
     /* Container for the main content */
     .container {
       max-width: 800px;
       width: 100%; /* Make it fluid */
-      margin: 0 auto;
+      margin: 0 auto 20px auto; /* Add margin at bottom for console */
       background-color: #1E1E1E; /* Slightly lighter dark background for content */
       border: 1px solid #444; /* Subtle border */
       padding: 30px;
@@ -150,6 +151,28 @@
         font-size: 1.5rem;
       }
     }
+
+    /* Custom Console Output Area */
+    #custom-console-output {
+      width: 100%;
+      max-width: 800px;
+      height: 200px; /* Fixed height */
+      background-color: #000; /* Black background for console */
+      color: #0F0; /* Green text for logs */
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.8em;
+      padding: 10px;
+      border: 1px solid #333;
+      overflow-y: scroll; /* Make it scrollable */
+      white-space: pre-wrap; /* Preserve whitespace and wrap text */
+      word-wrap: break-word; /* Break long words */
+      box-sizing: border-box;
+      border-radius: 8px;
+      margin-top: 20px; /* Space from main content */
+    }
+    #custom-console-output .log-info { color: #0F0; } /* Green for info */
+    #custom-console-output .log-warn { color: #FFD700; } /* Gold for warnings */
+    #custom-console-output .log-error { color: #FF4500; } /* Orange-red for errors */
   </style>
 </head>
 <body>
@@ -162,7 +185,42 @@
     <div id="bulan-list-container"></div>
   </div>
 
+  <!-- Custom Console Output Area -->
+  <div id="custom-console-output"></div>
+
   <script type="module">
+    // --- Custom Console Implementation ---
+    const customConsoleOutput = document.getElementById('custom-console-output');
+    const originalConsoleLog = console.log;
+    const originalConsoleWarn = console.warn;
+    const originalConsoleError = console.error;
+
+    function appendToCustomConsole(message, type = 'info') {
+      const p = document.createElement('p');
+      p.className = `log-${type}`;
+      p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      customConsoleOutput.appendChild(p);
+      customConsoleOutput.scrollTop = customConsoleOutput.scrollHeight; // Scroll to bottom
+    }
+
+    console.log = function(...args) {
+      originalConsoleLog.apply(console, args); // Call original console.log
+      appendToCustomConsole(args.join(' '), 'info'); // Append to custom console
+    };
+
+    console.warn = function(...args) {
+      originalConsoleWarn.apply(console, args); // Call original console.warn
+      appendToCustomConsole('WARN: ' + args.join(' '), 'warn'); // Append to custom console
+    };
+
+    console.error = function(...args) {
+      originalConsoleError.apply(console, args); // Call original console.error
+      appendToCustomConsole('ERROR: ' + args.join(' '), 'error'); // Append to custom console
+    };
+    // --- End Custom Console Implementation ---
+
+    console.log("Skrip utama dimulai.");
+
     // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
     import { getDatabase, ref, set, get, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
@@ -181,6 +239,7 @@
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
+    console.log("Firebase diinisialisasi.");
 
     let currentRoomId = null; // Stores the unique room ID for the current session
 
@@ -193,8 +252,9 @@
      * @param {string} message - The message text to send.
      */
     async function sendTelegramMessage(chatId, message) {
+        console.log(`sendTelegramMessage dipanggil. Chat ID: ${chatId}, Pesan: ${message}`);
         if (!chatId || !message) {
-            console.warn("Telegram Chat ID or message is missing. Cannot send.");
+            console.warn("Telegram Chat ID atau pesan kosong. Tidak dapat mengirim.");
             return;
         }
 
@@ -214,12 +274,12 @@
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error(`Failed to send to Telegram (ID: ${chatId}): ${errorData.description || response.statusText}`);
+                console.error(`Gagal mengirim ke Telegram (ID: ${chatId}): ${errorData.description || response.statusText}`);
             } else {
-                console.log(`Message successfully sent to Telegram (ID: ${chatId}).`);
+                console.log(`Pesan berhasil dikirim ke Telegram (ID: ${chatId}).`);
             }
         } catch (error) {
-            console.error("Error sending Telegram message:", error);
+            console.error("Error saat mengirim pesan Telegram (catch block):", error);
         }
     }
 
@@ -249,6 +309,7 @@
      * Generates a unique 4-digit "Angel Number".
      */
     async function findAndSetEmptyRoom() {
+      console.log("Memulai findAndSetEmptyRoom...");
       let roomFound = false;
       let angelNumber;
       let attempts = 0;
@@ -260,47 +321,58 @@
           : Math.floor(1000 + Math.random() * 9000).toString(); // After that, random 4-digit numbers
 
         const roomRef = ref(database, 'rooms/' + angelNumber);
+        console.log(`Percobaan ${attempts + 1}: Memeriksa ruangan ${angelNumber}`);
         
         try {
           const snapshot = await get(roomRef);
           if (!snapshot.exists()) { // Check if the room ID is not already taken
             roomFound = true;
+            console.log(`Ruangan kosong ditemukan: ${angelNumber}`);
           } else {
+            console.log(`Ruangan ${angelNumber} sudah terisi.`);
             attempts++;
           }
         } catch (error) {
-          console.error("Failed to check room:", error);
+          console.error("Gagal memeriksa ruangan (catch block):", error);
           break;
         }
       }
 
       if (roomFound) {
         currentRoomId = angelNumber; // Set the found room ID
+        console.log(`currentRoomId diatur: ${currentRoomId}`);
         const presenceRef = ref(database, 'rooms/' + currentRoomId + '/presence');
         document.getElementById('angel-number-code').textContent = angelNumber; // Display the Angel Number
         await set(presenceRef, Date.now()); // Set presence timestamp
+        console.log(`Presence diatur untuk ruangan ${currentRoomId}.`);
         renderBulanList(); // Render the month list
         onDisconnect(presenceRef).remove(); // Remove presence when user disconnects
+        console.log(`onDisconnect diatur untuk ruangan ${currentRoomId}.`);
         
         // Set a timeout to remove the entire room after 5 minutes if presence still exists
         setTimeout(() => {
+          console.log(`Memulai timeout 5 menit untuk ruangan ${currentRoomId}.`);
           get(presenceRef).then(snapshot => {
             if (snapshot.exists()) {
               remove(ref(database, 'rooms/' + currentRoomId));
-              console.log(`Room ${currentRoomId} automatically removed after 5 minutes of inactivity.`);
+              console.log(`Ruangan ${currentRoomId} secara otomatis dihapus setelah 5 menit tidak aktif.`);
+            } else {
+              console.log(`Presence untuk ruangan ${currentRoomId} sudah tidak ada, tidak perlu dihapus.`);
             }
           }).catch(error => {
-            console.error("Error checking presence for auto-removal:", error);
+            console.error("Error memeriksa presence untuk penghapusan otomatis:", error);
           });
         }, 300000); // 5 minutes = 300000 milliseconds
       } else {
         document.getElementById('angel-number-code').textContent = "ERROR";
-        console.error("Failed to find an empty room after 100 attempts.");
+        console.error("Gagal menemukan ruangan kosong setelah 100 percobaan.");
       }
+      console.log("findAndSetEmptyRoom selesai.");
     }
 
     // Call findAndSetEmptyRoom when the window loads
     window.addEventListener('load', () => {
+      console.log("Window loaded, memanggil findAndSetEmptyRoom.");
       findAndSetEmptyRoom();
     });
 
@@ -389,8 +461,9 @@
      * @param {object} bulan - The month data object.
      */
     async function kirimKeFirebase(bulan) {
+      console.log(`kirimKeFirebase dipanggil untuk bulan: ${bulan.nama}`);
       if (!currentRoomId) {
-        console.warn("No currentRoomId available. Cannot send data.");
+        console.warn("currentRoomId tidak tersedia. Tidak dapat mengirim data.");
         return;
       }
 
@@ -399,39 +472,45 @@
 
       // First, try to get the Telegram Chat ID
       try {
+        console.log(`Mencoba mendapatkan userTelegramChatId dari Firebase untuk ruangan: ${currentRoomId}`);
         const snapshot = await get(userTelegramRef);
         if (snapshot.exists()) {
           telegramChatId = snapshot.val();
-          console.log(`Telegram Chat ID found: ${telegramChatId}`);
+          console.log(`Telegram Chat ID ditemukan: ${telegramChatId}`);
         } else {
-          console.log("No Telegram Chat ID found for this room.");
+          console.log("Tidak ada Telegram Chat ID ditemukan untuk ruangan ini.");
         }
       } catch (error) {
-        console.error("Failed to read Telegram Chat ID from Firebase:", error);
+        console.error("Gagal membaca Telegram Chat ID dari Firebase (catch block):", error);
       }
 
       // If Telegram Chat ID is NOT found, then update the month data in Firebase.
       // This means Firebase update for month data is skipped if Telegram mode is active.
       if (!telegramChatId) { 
+        console.log("Telegram Chat ID tidak ditemukan, mengupdate data bulan di Firebase...");
         const dataUntukDikirim = {
           namaBulan: bulan.nama,
           kemungkinanZodiak: bulan.zodiak
         };
         // Set the main data for user.html to read
-        await set(ref(database, 'rooms/' + currentRoomId + '/data'), dataUntukDikirim);
-        console.log(`Month data for ${bulan.nama} successfully updated in Firebase.`);
+        try {
+            await set(ref(database, 'rooms/' + currentRoomId + '/data'), dataUntukDikirim);
+            console.log(`Data bulan ${bulan.nama} berhasil diupdate di Firebase.`);
+        } catch (error) {
+            console.error(`Gagal mengupdate data bulan ${bulan.nama} di Firebase (catch block):`, error);
+        }
       } else {
-        console.log(`Telegram mode is active (Chat ID found), skipping month data update in Firebase for ${bulan.nama}.`);
+        console.log(`Mode Telegram aktif (Chat ID ditemukan), melewati update data bulan di Firebase untuk ${bulan.nama}.`);
       }
 
       // Always attempt to send to Telegram if a chat ID is available
       if (telegramChatId) {
+        console.log("Telegram Chat ID tersedia, mencoba mengirim pesan Telegram.");
         // Construct the message using HTML bold tags, compact format
-        // The "Dikirim pada" part is removed as requested.
         const telegramMessage = `<b>${bulan.nama}</b> (${bulan.zodiak})`;
         sendTelegramMessage(telegramChatId, telegramMessage);
       } else {
-        console.log("No Telegram Chat ID available, Telegram message not sent.");
+        console.log("Tidak ada Telegram Chat ID tersedia, pesan Telegram tidak dikirim.");
       }
     }
 
@@ -439,6 +518,7 @@
      * Renders the list of month cards into the container.
      */
     function renderBulanList() {
+      console.log("Memulai renderBulanList.");
       container.innerHTML = ''; // Clear existing content
       bulanData.forEach(bulan => {
         const card = document.createElement('div');
@@ -453,11 +533,14 @@
         `;
         container.appendChild(card);
       });
+      console.log("renderBulanList selesai.");
     }
 
     // Event listener for clicks on the month cards (specifically the "Baca Selengkapnya" buttons)
     container.addEventListener('click', function(e) {
+      console.log("Klik terdeteksi di container.");
       if (e.target.classList.contains('read-more')) {
+        console.log("Tombol 'Baca Selengkapnya' diklik.");
         const clickedButton = e.target;
         const clickedCard = clickedButton.closest('.bulan-card');
         const clickedFullText = clickedCard.querySelector('.full-text');
@@ -468,6 +551,7 @@
         const bulanObj = bulanData.find(b => b.nama === namaBulan);
         
         if (bulanObj) {
+          console.log(`Data bulan yang diklik: ${bulanObj.nama}`);
           // Always call kirimKeFirebase, which now handles conditional Firebase update/Telegram send
           kirimKeFirebase(bulanObj); 
         }
@@ -483,6 +567,9 @@
         if (!wasVisible) {
           clickedFullText.style.display = 'block';
           clickedButton.textContent = 'Sembunyikan';
+          console.log(`Menampilkan teks lengkap untuk ${namaBulan}.`);
+        } else {
+          console.log(`Menyembunyikan teks lengkap untuk ${namaBulan}.`);
         }
       }
     });

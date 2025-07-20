@@ -1,776 +1,820 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
-import { getDatabase, ref, onValue, get } from 'firebase/database';
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Divina - Layar Pesulap</title>
 
-// Kredensial Firebase Anda yang dimasukkan secara langsung
-const firebaseConfig = {
-  apiKey: "AIzaSyCblBBI3macwNluj2Fv0QoHwHHuJKVtRec",
-  authDomain: "divina-connect.firebaseapp.com",
-  databaseURL: "https://divina-connect-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "divina-connect",
-  storageBucket: "divina-connect.firebasestorage.app",
-  messagingSenderId: "777570372540",
-  appId: "1:777570372540:web:6b4f3be1b46dbe9fdcf9b9"
-};
+    <!-- Meta tags for PWA -->
+    <meta name="theme-color" content="#E1F5FE">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Divina">
+    <link rel="apple-touch-icon" href="https://images2.imgbox.com/c4/02/as2b5MEJ_o.png">
+    <link rel="icon" href="https://images2.imgbox.com/c4/02/as2b5MEJ_o.png">
 
-// Variabel global yang disediakan oleh lingkungan Canvas (hanya untuk auth token jika diperlukan)
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-// Inisialisasi Firebase di luar komponen untuk menghindari inisialisasi ulang
-let app, db, auth, rtdb;
-
-try {
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    auth = getAuth(app);
-    rtdb = getDatabase(app);
-} catch (error) {
-    console.error("Gagal menginisialisasi Firebase:", error);
-}
-
-const Numpad = ({ onCodeEntered, promptText }) => {
-    const [enteredCode, setEnteredCode] = useState("");
-
-    const handleKeyClick = (key) => {
-        if (key === 'del') {
-            setEnteredCode(prev => prev.slice(0, -1));
-        } else if (enteredCode.length < 4) {
-            setEnteredCode(prev => prev + key);
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* General Styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%; width: 100%; overflow: hidden; 
+            background: linear-gradient(to bottom, #FFFFFF 0%, #B3E5FC 100%);
+            user-select: none; -webkit-user-select: none;
         }
-    };
-
-    useEffect(() => {
-        if (enteredCode.length === 4) {
-            onCodeEntered(enteredCode);
+        body {
+            display: flex; justify-content: center; align-items: center;
+            color: #5D4037; 
+            font-family: 'Cormorant Garamond', serif;
+            padding: 20px;
         }
-    }, [enteredCode, onCodeEntered]);
 
-    return (
-        <div id="numpad-overlay">
-            <div id="numpad-container">
-                <h2 id="numpad-prompt">{promptText}</h2>
-                <div className="code-display">
-                    {[0, 1, 2, 3].map(i => (
-                        <span key={i} className="code-digit">
-                            {enteredCode[i] || ""}
-                        </span>
-                    ))}
-                </div>
-                <div className="numpad" id="main-numpad">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 'del', 0].map(key => (
-                        <button
-                            key={key}
-                            className="numpad-btn"
-                            data-key={key}
-                            onClick={() => handleKeyClick(key)}
-                        >
-                            {key === 'del' ? (
-                                <svg viewBox="0 0 576 512"><path d="M576 128c0-35.3-28.7-64-64-64H205.3c-17 0-33.3 6.7-45.3 18.7L9.4 233.4c-6 6-9.4 14.1-9.4 22.6s3.4 16.6 9.4 22.6L160 429.3c12 12 28.3 18.7 45.3 18.7H512c35.3 0 64-28.7 64-64V128zM271 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6-9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"/></svg>
-                            ) : (
-                                key
-                            )}
-                        </button>
-                    ))}
-                </div>
+        /* --- MAIN CONTAINER --- */
+        #main-container {
+            width: 100%; height: 100%;
+            padding: 20px;
+            display: flex; flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        #main-container h1#title {
+            font-family: 'Cinzel', serif; 
+            font-size: clamp(2rem, 7vw, 3.5rem);
+            font-weight: 700;
+            color: #B8860B;
+            text-shadow: 1px 1px 3px rgba(255,255,255,0.5);
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            letter-spacing: 1px;
+        }
+        #main-container h1#title:hover { color: #A4770A; }
+        
+        /* --- AI RESULT DISPLAY --- */
+        #result-display { display: none; }
+        #result-display.visible { display: block; }
+        #result-code {
+            font-family: 'Cinzel', serif; 
+            font-size: clamp(40px, 10vw, 80px);
+            color: #B8860B;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.7);
+            margin: 0;
+            letter-spacing: 5px;
+        }
+        #ai-result {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: clamp(20px, 4vw, 28px);
+            color: #5D4037;
+            margin-top: 20px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+        
+        /* --- CONNECTION INDICATOR --- */
+        #connection-indicator {
+            position: fixed; top: 15px; left: 15px;
+            width: 8px; height: 8px; border-radius: 50%;
+            display: none; z-index: 150;
+            transition: all 0.3s ease;
+        }
+        #connection-indicator.failed, #connection-indicator.disconnected { 
+            background-color: #C62828; 
+            box-shadow: 0 0 10px #C62828;
+        }
+        #connection-indicator.connected { 
+            background-color: #2E7D32; 
+            box-shadow: 0 0 10px #2E7D32;
+        }
+        #connection-indicator.tts-active { 
+            background-color: #1565C0; 
+            box-shadow: 0 0 10px #1565C0;
+        }
+        #connection-indicator.connected-tts-off { 
+            background-color: #FFA000;
+            box-shadow: 0 0 10px #FFA000;
+        }
+        #connection-indicator.loading {
+            background-color: #64B5F6;
+            box-shadow: 0 0 10px #64B5F6;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* --- TAP-AND-HOLD OVERLAY (FIREBASE DATA) --- */
+        .content-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: rgba(225, 245, 254, 0.85);
+            backdrop-filter: blur(8px); z-index: 140;
+        }
+        #hold-content h2 {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(24px, 6vw, 50px);
+            color: #795548;
+            margin: 0;
+            line-height: 1.4;
+        }
+        #hold-content p {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(20px, 5vw, 36px);
+             color: #A1887F;
+        }
+        #hold-content #separator-line {
+            margin: 20px auto; width: 120px; height: 2px;
+            background-color: #D4AF37; border-radius: 2px;
+        }
+
+        /* --- KEYPAD INPUT --- */
+        #numpad-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 300;
+        }
+        #numpad-container { 
+            background: #fdfdfd; padding: 30px; border-radius: 20px; 
+            border: 1px solid #eee; text-align: center;
+        }
+        #numpad-prompt {
+            font-family: 'Cormorant Garamond', serif; font-size: 1.2rem;
+            color: #795548; margin-bottom: 25px;
+        }
+        .code-display { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
+        .code-digit {
+            width: 50px; height: 65px; background-color: #eee;
+            border-bottom: 2px solid #ccc; border-radius: 8px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 2.5rem; font-family: 'Cormorant Garamond', serif; color: #4E342E;
+        }
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .numpad-btn {
+            font-family: 'Lora', serif; font-size: 1.8rem; background-color: #fff;
+            border: 1px solid #ddd; color: #4E342E; border-radius: 50%;
+            width: 70px; height: 70px; margin: auto;
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .numpad-btn:hover { background-color: #f5f5f5; border-color: #ccc; }
+        #btn-delete svg { width: 40%; height: 40%; fill: #8D6E63; pointer-events: none; }
+
+        /* --- ANIMATIONS --- */
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(225, 245, 254, 0.6); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 500;
+        }
+        .loader {
+            border: 8px solid #f3f3f3; border-top: 8px solid #B8860B;
+            border-radius: 50%; width: 60px; height: 60px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* Settings Modal Styles */
+        #settings-overlay {
+            background-color: rgba(0,0,0,0.7); 
+            backdrop-filter: blur(8px);
+            z-index: 400; 
+        }
+        #settings-container {
+            background: #fdfdfd;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid #eee;
+            text-align: center;
+            max-width: 400px;
+            width: 90%; 
+        }
+        #settings-container h2 {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            color: #795548;
+            margin-bottom: 25px;
+        }
+        .setting-item {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .setting-item label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            color: #5D4037;
+            display: block;
+            margin-bottom: 8px;
+        }
+        #telegram-chat-id {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            color: #4E342E;
+        }
+        .switch-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+        }
+        /* The switch - the box around the slider */
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 60px;
+          height: 34px;
+        }
+
+        /* Hide default HTML checkbox */
+        .switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+
+        /* The slider */
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          -webkit-transition: .4s;
+          transition: .4s;
+        }
+
+        .slider:before {
+          position: absolute;
+          content: "";
+          height: 26px;
+          width: 26px;
+          left: 4px;
+          bottom: 4px;
+          background-color: white;
+          -webkit-transition: .4s;
+          transition: .4s;
+        }
+
+        input:checked + .slider {
+          background-color: #B8860B;
+        }
+
+        input:focus + .slider {
+          box-shadow: 0 0 1px #B8860B;
+        }
+
+        input:checked + .slider:before {
+          -webkit-transform: translateX(26px);
+          -ms-transform: translateX(26px);
+          transform: translateX(26px);
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+          border-radius: 34px;
+        }
+
+        .slider.round:before {
+          border-radius: 50%;
+        }
+
+        .setting-actions {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+        }
+        .setting-actions button {
+            padding: 10px 20px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        #save-settings-btn {
+            background-color: #B8860B;
+            color: white;
+        }
+        #save-settings-btn:hover {
+            background-color: #A4770A;
+        }
+        #close-settings-btn {
+            background-color: #ccc;
+            color: #5D4037;
+        }
+        #close-settings-btn:hover {
+            background-color: #bbb;
+        }
+
+        /* Toast Message for Telegram */
+        #toast-message {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            white-space: nowrap; 
+        }
+        #toast-message.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 600px) {
+            #numpad-container, #settings-container {
+                padding: 20px;
+            }
+            .code-digit {
+                width: 45px;
+                height: 60px;
+                font-size: 2rem;
+            }
+            .numpad-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+            .setting-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .setting-actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <h1 id="title">Angel Number Interpreter</h1>
+        <div id="result-display">
+            <h1 id="result-code"></h1>
+            <p id="ai-result"></p>
+        </div>
+    </div>
+
+    <div id="connection-indicator"></div>
+    <div id="loading-overlay"><div class="loader"></div></div>
+    
+    <div class="content-overlay" id="hold-overlay">
+        <div id="hold-content">
+            <h2 id="hold-bulan"></h2>
+            <p id="hold-zodiak"></p>
+            <div id="separator-line"></div>
+            <h2 id="hold-pertanyaan"></h2>
+        </div>
+    </div>
+    
+    <div id="numpad-overlay">
+        <div id="numpad-container">
+            <h2 id="numpad-prompt"></h2>
+            <div class="code-display">
+                <span class="code-digit"></span><span class="code-digit"></span>
+                <span class="code-digit"></span><span class="code-digit"></span>
+            </div>
+            <div class="numpad" id="main-numpad">
+                <button class="numpad-btn" data-key="1">1</button><button class="numpad-btn" data-key="2">2</button><button class="numpad-btn" data-key="3">3</button>
+                <button class="numpad-btn" data-key="4">4</button><button class="numpad-btn" data-key="5">5</button><button class="numpad-btn" data-key="6">6</button>
+                <button class="numpad-btn" data-key="7">7</button><button class="numpad-btn" data-key="8">8</button><button class="numpad-btn" data-key="9">9</button>
+                <button class="numpad-btn" id="btn-delete" data-key="del"><svg viewBox="0 0 576 512"><path d="M576 128c0-35.3-28.7-64-64-64H205.3c-17 0-33.3 6.7-45.3 18.7L9.4 233.4c-6 6-9.4 14.1-9.4 22.6s3.4 16.6 9.4 22.6L160 429.3c12 12 28.3 18.7 45.3 18.7H512c35.3 0 64-28.7 64-64V128zM271 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6-9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"/></svg></button>
+                <button class="numpad-btn" data-key="0">0</button>
             </div>
         </div>
-    );
-};
+    </div>
 
-const SettingsModal = ({ isVisible, onClose, onSave, initialChatId, initialPeekMode }) => {
-    const [telegramChatId, setTelegramChatId] = useState(initialChatId || '');
-    const [peekMode, setPeekMode] = useState(initialPeekMode || 'app');
-
-    if (!isVisible) return null;
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex justify-center items-center z-[400]">
-            <div className="bg-white p-8 rounded-2xl border border-gray-200 text-center shadow-lg w-11/12 max-w-md">
-                <h2 className="font-serif text-2xl text-amber-900 mb-6">Pengaturan</h2>
-                <div className="mb-6 text-left">
-                    <label htmlFor="telegramChatId" className="block text-stone-700 text-sm font-bold mb-2">
-                        ID Chat Telegram Anda:
-                    </label>
-                    <input
-                        type="text"
-                        id="telegramChatId"
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        value={telegramChatId}
-                        onChange={(e) => setTelegramChatId(e.target.value)}
-                        placeholder="Masukkan ID Chat Telegram"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Dapatkan ID chat Anda dari @userinfobot di Telegram.</p>
-                </div>
-                <div className="mb-8 text-left">
-                    <label className="block text-stone-700 text-sm font-bold mb-2">
-                        Tampilkan Informasi Detail:
-                    </label>
-                    <div className="flex items-center mb-2">
-                        <input
-                            type="radio"
-                            id="peekApp"
-                            name="peekMode"
-                            value="app"
-                            checked={peekMode === 'app'}
-                            onChange={(e) => setPeekMode(e.target.value)}
-                            className="mr-2"
-                        />
-                        <label htmlFor="peekApp" className="text-gray-700">Di Aplikasi (Notifikasi)</label>
-                    </div>
-                    <div className="flex items-center">
-                        <input
-                            type="radio"
-                            id="peekTelegram"
-                            name="peekMode"
-                            value="telegram"
-                            checked={peekMode === 'telegram'}
-                            onChange={(e) => setPeekMode(e.target.value)}
-                            className="mr-2"
-                        />
-                        <label htmlFor="peekTelegram" className="text-gray-700">Di Telegram</label>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-4">
-                    <button
-                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors duration-200"
-                        onClick={onClose}
-                    >
-                        Batal
-                    </button>
-                    <button
-                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200"
-                        onClick={() => onSave(telegramChatId, peekMode)}
-                    >
-                        Simpan
-                    </button>
-                </div>
+    <!-- Settings Modal HTML -->
+    <div id="settings-overlay" class="content-overlay">
+        <div id="settings-container">
+            <h2>Pengaturan</h2>
+            <div class="setting-item">
+                <label for="telegram-chat-id">ID Obrolan Telegram:</label>
+                <input type="text" id="telegram-chat-id" placeholder="Masukkan ID Obrolan Anda">
+            </div>
+            <div class="setting-item switch-container">
+                <span>Kirim ke Telegram</span>
+                <label class="switch">
+                    <input type="checkbox" id="send-to-telegram-toggle">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div class="setting-actions">
+                <button id="save-settings-btn">Simpan</button>
+                <button id="close-settings-btn">Tutup</button>
             </div>
         </div>
-    );
-};
+    </div>
 
-const Toast = ({ message, type, onClose }) => {
-    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
-    const textColor = 'text-white';
+    <!-- Toast Message HTML -->
+    <div id="toast-message"></div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
+        import { getDatabase, ref, onValue, get, set, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            onClose();
-        }, 3000); // Sembunyikan otomatis setelah 3 detik
-        return () => clearTimeout(timer);
-    }, [onClose]);
+        const firebaseConfig = {
+          apiKey: "AIzaSyCblBBI3macwNluj2Fv0QoHwHHuJKVtRec",
+          authDomain: "divina-connect.firebaseapp.com",
+          databaseURL: "https://divina-connect-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "divina-connect",
+          storageBucket: "divina-connect.firebasestorage.app",
+          messagingSenderId: "777570372540",
+          appId: "1:777570372540:web:6b4f3be1b46dbe9fdcf9b9"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
-    return (
-        <div className={`fixed bottom-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg ${bgColor} ${textColor} z-[500] animate-fade-in-up`}>
-            {message}
-        </div>
-    );
-};
+        // --- DOM ELEMENTS ---
+        const mainContainer = document.getElementById('main-container');
+        const title = document.getElementById('title');
+        const resultDisplay = document.getElementById('result-display');
+        const connectionIndicator = document.getElementById('connection-indicator');
+        const holdOverlay = document.getElementById('hold-overlay');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const numpadOverlay = document.getElementById('numpad-overlay');
+        const numpadPrompt = document.getElementById('numpad-prompt');
+        const mainNumpad = document.getElementById('main-numpad');
+        const codeDigitDisplays = document.querySelectorAll('.code-digit');
+        const resultCodeDisplay = document.getElementById('result-code');
+        const aiResultDisplay = document.getElementById('ai-result');
+        const holdBulan = document.getElementById('hold-bulan');
+        const holdZodiak = document.getElementById('hold-zodiak');
+        const holdPertanyaan = document.getElementById('hold-pertanyaan');
 
+        // Settings Modal DOM elements
+        const settingsOverlay = document.getElementById('settings-overlay');
+        const telegramChatIdInput = document.getElementById('telegram-chat-id');
+        const sendToTelegramToggle = document.getElementById('send-to-telegram-toggle');
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
+        const closeSettingsBtn = document.getElementById('close-settings-btn');
+        const toastMessage = document.getElementById('toast-message');
 
-const App = () => {
-    const [enteredCode, setEnteredCode] = useState("");
-    const [isConnected, setIsConnected] = useState(false);
-    const [isTtsEnabled, setIsTtsEnabled] = useState(false);
-    const [firebaseData, setFirebaseData] = useState(null);
-    const [showNumpad, setShowNumpad] = useState(false);
-    const [showLoading, setShowLoading] = useState(false);
-    const [resultCode, setResultCode] = useState("");
-    const [aiResult, setAiResult] = useState("");
-    const [showSettingsModal, setShowSettingsModal] = useState(false);
-    const [telegramChatId, setTelegramChatId] = useState(localStorage.getItem('telegramChatId') || '');
-    const [peekMode, setPeekMode] = useState(localStorage.getItem('peekMode') || 'app');
-    const [toast, setToast] = useState(null);
-    const [showHoldOverlay, setShowHoldOverlay] = useState(false); // New state for peek overlay
+        // --- STATE & DATA VARIABLES ---
+        let enteredCode = "";
+        let isConnected = false;
+        let holdTimeout;
+        let isTtsEnabled = false; 
+        let firebaseData = null;
+        let ttsTapCount = 0;
+        let ttsTapTimer;
+        const dynamicPrompts = [
+            "masukan kombinasi angka random dalam hidupmu", "angka apa yang terlintas di benakmu saat ini?",
+            "bisikan empat digit angka dari alam semesta...", "kombinasi mana yang memanggilmu hari ini?",
+            "ungkap takdirmu melalui empat angka pilihan."
+        ];
 
-    const holdTimeoutRef = useRef(null);
-    const ttsTapCountRef = useRef(0);
-    const ttsTapTimerRef = useRef(null);
-    const userIdRef = useRef(null);
+        // State for app settings (Telegram)
+        let appSettings = {
+            telegramChatId: '',
+            sendToTelegram: false
+        };
 
-    // New state for two-finger swipe detection
-    const touchStartPosRef = useRef([]); // Array of {x, y} for two touches
-    const isSwipingRef = useRef(false);
-    const swipeThreshold = 50; // pixels for swipe distance, reduced for better responsiveness
+        // --- AI & FIREBASE FUNCTIONS ---
+        
+        function cleanAIResponse(responseText) {
+            const targetPhrase = "kombinasi ini";
+            const lowercasedResponse = responseText.toLowerCase();
+            const startIndex = lowercasedResponse.indexOf(targetPhrase);
 
-    const dynamicPrompts = [
-        "masukan kombinasi angka random dalam hidupmu", "angka apa yang terlintas di benakmu saat ini?",
-        "bisikan empat digit angka dari alam semesta...", "kombinasi mana yang memanggilmu hari ini?",
-        "ungkap takdirmu melalui empat angka pilihan."
-    ];
-
-    const showToast = useCallback((message, type = 'info') => {
-        setToast({ message, type });
-    }, []);
-
-    const closeToast = useCallback(() => {
-        setToast(null);
-    }, []);
-
-    const cleanAIResponse = useCallback((responseText) => {
-        const targetPhrase = "kombinasi ini";
-        const lowercasedResponse = responseText.toLowerCase();
-        const startIndex = lowercasedResponse.indexOf(targetPhrase);
-        if (startIndex !== -1) {
-            return responseText.substring(startIndex);
+            if (startIndex !== -1) {
+                return responseText.substring(startIndex);
+            }
+            return responseText;
         }
-        return responseText;
-    }, []);
 
-    const generateBarnumStatement = useCallback(async (code) => {
-        const prompt = `Hasilkan satu kalimat saja yang menjelaskan makna kombinasi angka ${code} dari olahan barnum statement. JANGAN gunakan kata pembuka seperti "Tentu" atau "Berikut". Kalimat HARUS dimulai dengan "kombinasi ini..." dan merujuk pada pembaca dengan kata "kamu".`;
-        let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-        const payload = { contents: chatHistory };
-        const apiKey = ""; // Kunci API disediakan oleh runtime Canvas jika kosong
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-        try {
+        async function generateBarnumStatement(code) {
+            const prompt = `Hasilkan satu kalimat saja yang menjelaskan makna kombinasi angka ${code} dari olahan barnum statement. JANGAN gunakan kata pembuka seperti "Tentu" atau "Berikut". Kalimat HARUS dimulai dengan "kombinasi ini..." dan merujuk pada pembaca dengan kata "kamu".`;
+            
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiKey = "AIzaSyAbmZ1Y64hK4QhIhrHyVdn5ycIk4C7I2io"; // Your Gemini API Key
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const result = await response.json();
             if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
                 return cleanAIResponse(result.candidates[0].content.parts[0].text);
             }
-            throw new Error("Format respons AI tidak valid.");
-        } catch (error) {
-            console.error("Kesalahan menghasilkan pernyataan Barnum:", error);
-            throw error;
+            throw new Error("Invalid AI response format.");
         }
-    }, [cleanAIResponse]);
 
-    const sendTelegramMessage = useCallback(async (chatId, data) => {
-        if (!chatId) {
-            showToast("ID Chat Telegram tidak ditemukan. Silakan atur di Pengaturan.", "error");
-            return;
-        }
-        const botToken = "7639651359:AAF4XflfPvNvT6ku5APx3bSuzzbyG2cB_FY";
-        const message = `*Informasi Angel Number:*\n\n*Bulan:* ${data.namaBulan}\n*Zodiak:* ${data.kemungkinanZodiak}\n*Pertanyaan:* ${data.pertanyaan}`;
-        const apiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+        async function verifyAndConnect(code) {
+            connectionIndicator.className = 'loading';
+            connectionIndicator.style.display = 'block';
+            title.style.display = 'none';
+            resultDisplay.classList.remove('visible');
 
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    text: message,
-                    parse_mode: 'Markdown'
-                })
-            });
-            if (!response.ok) {
-                throw new Error(`Gagal mengirim ke Telegram.`);
-            }
-            showToast("Informasi berhasil dikirim ke Telegram!", "success");
-        } catch (error) {
-            console.error("Kesalahan saat mengirim ke Telegram:", error);
-            showToast(error.message, "error");
-        }
-    }, [showToast]);
-
-    const verifyAndConnect = useCallback(async (code) => {
-        setShowLoading(true);
-        setResultCode("");
-        setAiResult("");
-        setIsConnected(false);
-
-        const roomRef = ref(rtdb, 'rooms/' + code);
-        try {
-            const snapshot = await get(roomRef);
-            if (snapshot.exists() && snapshot.val().presence) {
-                setIsConnected(true);
-                
-                // Selalu generate dan tampilkan ramalan
-                const aiText = await generateBarnumStatement(code);
-                setResultCode(code);
-                setAiResult(aiText);
-                
-                const dataRef = ref(rtdb, 'rooms/' + code + '/data');
-                onValue(dataRef, (dataSnapshot) => {
-                    if (dataSnapshot.exists()) {
-                        const { namaBulan, kemungkinanZodiak } = dataSnapshot.val();
-                        let pertanyaan = "";
-                        switch (namaBulan) {
-                            case "Januari":   pertanyaan = "Q"; break; case "Februari":  pertanyaan = "A"; break;
-                            case "Maret":     pertanyaan = "R"; break; case "April":     pertanyaan = "E"; break;
-                            case "Mei":       pertanyaan = "U"; break; case "Juni":      pertanyaan = "G"; break;
-                            case "Juli":      pertanyaan = "L"; break; case "Agustus":   pertanyaan = "V"; break;
-                            case "September": pertanyaan = "B"; break; case "Oktober":   pertanyaan = "O"; break;
-                            case "November":  pertanyaan = "T"; break; case "Desember":  pertanyaan = "S"; break;
-                            default: pertanyaan = ""; break;
-                        }
-                        const currentFirebaseData = { namaBulan, kemungkinanZodiak, pertanyaan };
-                        setFirebaseData(currentFirebaseData);
-
-                        if (peekMode === 'telegram') {
-                            sendTelegramMessage(telegramChatId, currentFirebaseData);
-                        }
-                        
-                        if (isTtsEnabled) speak(`${namaBulan}. ${kemungkinanZodiak}. ${pertanyaan}.`);
+            const roomRef = ref(database, 'rooms/' + code);
+            try {
+                const snapshot = await get(roomRef);
+                if (snapshot.exists() && snapshot.val().presence) {
+                    isConnected = true;
+                    loadingOverlay.style.display = 'flex';
+                    const aiText = await generateBarnumStatement(code);
+                    loadingOverlay.style.display = 'none';
+                    
+                    resultCodeDisplay.textContent = code;
+                    aiResultDisplay.textContent = aiText;
+                    resultDisplay.classList.add('visible');
+                    
+                    listenToFirebaseForTTS(code);
+                    
+                    // NEW: If Telegram sending is enabled, send the chat ID to Firebase
+                    if (appSettings.sendToTelegram && appSettings.telegramChatId) {
+                        const userTelegramRef = ref(database, 'rooms/' + code + '/userTelegramChatId');
+                        await set(userTelegramRef, appSettings.telegramChatId);
+                        // Set onDisconnect to remove the chat ID when user.html disconnects
+                        onDisconnect(userTelegramRef).remove(); 
+                        showToast("ID Obrolan Telegram dikirim ke server.");
+                    } else if (appSettings.telegramChatId && !appSettings.sendToTelegram) {
+                        // If chat ID exists but sending is off, ensure it's removed from Firebase if it was there before
+                        const userTelegramRef = ref(database, 'rooms/' + code + '/userTelegramChatId');
+                        remove(userTelegramRef);
                     }
-                });
 
-            } else {
-                throw new Error(`Room ${code} tidak ditemukan atau tidak aktif.`);
+                    // Set connection indicator based on TTS state
+                    if (isTtsEnabled) {
+                        connectionIndicator.className = 'tts-active';
+                    } else {
+                        connectionIndicator.className = 'connected';
+                    }
+                } else {
+                    throw new Error(`Room ${code} tidak ditemukan atau tidak aktif.`);
+                }
+            } catch (error) {
+                loadingOverlay.style.display = 'none';
+                handleConnectionFailure(error.message);
             }
-        } catch (error) {
-            console.error("Koneksi gagal:", error);
-            setIsConnected(false);
-            setResultCode("Error");
-            setAiResult("Sedang tidak bisa meramal saat ini, coba lagi.");
-            setTimeout(() => {
-                setShowNumpad(true);
-            }, 3000);
-        } finally {
-            setShowLoading(false);
         }
-    }, [generateBarnumStatement, isTtsEnabled, peekMode, sendTelegramMessage, telegramChatId, rtdb]);
+        
+        function listenToFirebaseForTTS(code) {
+            const dataRef = ref(database, 'rooms/' + code + '/data');
+            onValue(dataRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const { namaBulan, kemungkinanZodiak } = snapshot.val();
+                    let pertanyaan = "";
+                    switch (namaBulan) {
+                        case "Januari":   pertanyaan = "Q"; break; case "Februari":  pertanyaan = "A"; break;
+                        case "Maret":     pertanyaan = "R"; break; case "April":     pertanyaan = "E"; break;
+                        case "Mei":       pertanyaan = "U"; break; case "Juni":      pertanyaan = "G"; break;
+                        case "Juli":      pertanyaan = "L"; break; case "Agustus":   pertanyaan = "V"; break;
+                        case "September": pertanyaan = "B"; break; case "Oktober":   pertanyaan = "O"; break;
+                        case "November":  pertanyaan = "T"; break; case "Desember":  pertanyaan = "S"; break;
+                    }
+                    firebaseData = { namaBulan, kemungkinanZodiak, pertanyaan }; 
 
-    const speak = useCallback((text) => {
-        if (!text || !isTtsEnabled) return;
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'id-ID';
-        window.speechSynthesis.speak(utterance);
-    }, [isTtsEnabled]);
+                    // Update hold content immediately
+                    holdBulan.textContent = firebaseData.namaBulan;
+                    holdZodiak.textContent = firebaseData.kemungkinanZodiak;
+                    holdPertanyaan.textContent = firebaseData.pertanyaan;
 
-    const toggleTTS = useCallback(() => {
-        setIsTtsEnabled(prev => {
-            const newState = !prev;
-            if (newState) {
+                    if (isTtsEnabled) {
+                        speak(`${namaBulan}. ${kemungkinanZodiak}. ${pertanyaan}.`);
+                    }
+                    // Telegram message sending is now handled by index.html
+                }
+            });
+        }
+
+        function handleConnectionFailure(errorMessage) {
+            isConnected = false;
+            connectionIndicator.className = 'failed'; 
+            resultCodeDisplay.textContent = "Error";
+            aiResultDisplay.textContent = errorMessage || "SERVER ERROR: Angka tidak aktif atau tidak ditemukan. Coba lagi.";
+            resultDisplay.classList.add('visible');
+            setTimeout(() => {
+                resultDisplay.classList.remove('visible');
+                title.style.display = 'block';
+                showNumpad();
+            }, 3000);
+        }
+
+        // --- UI & INTERACTION FUNCTIONS ---
+        function startHold(e) {
+            if (e.target.closest('#numpad-overlay') || e.target.closest('#settings-overlay')) return; 
+            if (isConnected && firebaseData) {
+                holdTimeout = setTimeout(() => {
+                    holdOverlay.style.display = 'flex';
+                }, 500);
+            }
+        }
+
+        function endHold() {
+            clearTimeout(holdTimeout);
+            holdOverlay.style.display = 'none';
+        }
+
+        function speak(text) {
+            if (!text || !isTtsEnabled) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID';
+            window.speechSynthesis.speak(utterance);
+        }
+        
+        function toggleTTS() {
+            isTtsEnabled = !isTtsEnabled;
+            connectionIndicator.classList.remove('connected', 'tts-active', 'connected-tts-off'); 
+
+            if (isTtsEnabled) {
+                connectionIndicator.classList.add('tts-active'); 
                 speak("Suara diaktifkan");
                 if (firebaseData) {
                     speak(`${firebaseData.namaBulan}. ${firebaseData.kemungkinanZodiak}. ${firebaseData.pertanyaan}.`);
                 }
             } else {
                 window.speechSynthesis.cancel();
+                if (isConnected) {
+                    connectionIndicator.classList.add('connected-tts-off'); 
+                } else {
+                    connectionIndicator.style.display = 'none'; 
+                }
             }
-            return newState;
-        });
-    }, [speak, firebaseData]);
-
-    const handleTitleClick = useCallback(() => {
-        if (isConnected) {
-            window.location.reload();
-        } else {
-            setShowNumpad(true);
         }
-    }, [isConnected]);
-
-    const handleMainContainerClick = useCallback((e) => {
-        // Jangan proses klik jika numpad, settings modal, atau hold overlay terbuka
-        if (e.target.closest('#numpad-overlay') || e.target.closest('#settings-modal') || e.target.closest('#hold-overlay')) return;
         
-        // Logika Triple Tap untuk TTS
-        clearTimeout(ttsTapTimerRef.current);
-        ttsTapCountRef.current++;
-        ttsTapTimerRef.current = setTimeout(() => { ttsTapCountRef.current = 0; }, 600);
-        if (ttsTapCountRef.current === 3) {
-            ttsTapCountRef.current = 0;
-            toggleTTS();
-        }
-    }, [toggleTTS]);
-
-    const handleNumpadCodeEntered = useCallback((code) => {
-        setEnteredCode(code);
-        setShowNumpad(false);
-        verifyAndConnect(code);
-    }, [verifyAndConnect]);
-
-    const handleSaveSettings = useCallback((chatId, mode) => {
-        setTelegramChatId(chatId);
-        setPeekMode(mode);
-        // Menyimpan pengaturan di localStorage
-        localStorage.setItem('telegramChatId', chatId);
-        localStorage.setItem('peekMode', mode);
-        setShowSettingsModal(false);
-        showToast("Pengaturan disimpan!", "success");
-    }, [showToast]);
-
-    // Autentikasi dan Inisialisasi Firebase
-    useEffect(() => {
-        if (!app || !auth || !rtdb) {
-            console.error("Firebase belum diinisialisasi sepenuhnya. Periksa konfigurasi.");
-            return;
+        function updateNumpadDisplay() {
+            for (let i = 0; i < 4; i++) {
+                codeDigitDisplays[i].textContent = enteredCode[i] || "";
+            }
         }
 
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userIdRef.current = user.uid;
-                console.log("Firebase terautentikasi. ID Pengguna:", user.uid);
-            } else {
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                    console.log("Firebase berhasil masuk.");
-                } catch (error) {
-                    console.error("Autentikasi Firebase gagal:", error);
+        function showNumpad() {
+            const randomIndex = Math.floor(Math.random() * dynamicPrompts.length);
+            numpadPrompt.textContent = dynamicPrompts[randomIndex];
+            enteredCode = "";
+            updateNumpadDisplay();
+            numpadOverlay.style.display = 'flex';
+        }
+
+        // SETTINGS FUNCTIONS (LOAD, SAVE, SHOW/HIDE MODAL, TOAST)
+        function loadSettings() {
+            try {
+                const storedSettings = JSON.parse(localStorage.getItem('divinaSettings'));
+                if (storedSettings) {
+                    appSettings = { ...appSettings, ...storedSettings };
+                    telegramChatIdInput.value = appSettings.telegramChatId;
+                    sendToTelegramToggle.checked = appSettings.sendToTelegram;
                 }
+            } catch (e) {
+                console.error("Gagal memuat pengaturan dari localStorage:", e);
+            }
+        }
+
+        function saveSettings() {
+            appSettings.telegramChatId = telegramChatIdInput.value.trim();
+            appSettings.sendToTelegram = sendToTelegramToggle.checked;
+            try {
+                localStorage.setItem('divinaSettings', JSON.stringify(appSettings));
+                showToast("Pengaturan disimpan!");
+                // If settings are saved and connected, update Firebase with new chat ID if needed
+                if (isConnected && enteredCode) {
+                    const userTelegramRef = ref(database, 'rooms/' + enteredCode + '/userTelegramChatId');
+                    if (appSettings.sendToTelegram && appSettings.telegramChatId) {
+                        set(userTelegramRef, appSettings.telegramChatId);
+                        onDisconnect(userTelegramRef).remove();
+                    } else {
+                        remove(userTelegramRef); // Remove if sending is off or ID is empty
+                    }
+                }
+            } catch (e) {
+                console.error("Gagal menyimpan pengaturan ke localStorage:", e);
+                showToast("Gagal menyimpan pengaturan.", true);
+            }
+            hideSettingsModal(); 
+        }
+
+        function showSettingsModal() {
+            loadSettings(); 
+            settingsOverlay.style.display = 'flex';
+        }
+
+        function hideSettingsModal() {
+            settingsOverlay.style.display = 'none';
+        }
+
+        function showToast(message, isError = false) {
+            toastMessage.textContent = message;
+            toastMessage.style.backgroundColor = isError ? 'rgba(200, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.8)';
+            toastMessage.classList.add('show');
+            setTimeout(() => {
+                toastMessage.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- EVENT LISTENERS ---
+        document.body.addEventListener('mousedown', startHold);
+        document.body.addEventListener('mouseup', endHold);
+        document.body.addEventListener('touchstart', startHold, { passive: true });
+        document.body.addEventListener('touchend', endHold);
+        
+        title.addEventListener('click', () => {
+            if (isConnected) { window.location.reload(); } else { showNumpad(); }
+        });
+
+        mainContainer.addEventListener('click', (e) => {
+            if (!isConnected || e.target.closest('#numpad-overlay') || e.target.closest('#settings-overlay')) return; 
+            clearTimeout(ttsTapTimer);
+            ttsTapCount++;
+            ttsTapTimer = setTimeout(() => { ttsTapCount = 0; }, 600);
+            if (ttsTapCount === 3) {
+                ttsTapCount = 0;
+                toggleTTS();
             }
         });
 
-        return () => unsubscribe();
-    }, [initialAuthToken]);
-
-    // Logika Tekan dan Tahan untuk Peek Information
-    const handleTapAndHoldStart = useCallback((e) => {
-        // Hanya aktifkan jika 1 jari dan terhubung serta ada data Firebase
-        // Atau jika ini adalah event mouse (klik dan tahan)
-        if (isConnected && firebaseData && (e.touches === undefined || e.touches.length === 1)) {
-            holdTimeoutRef.current = setTimeout(() => {
-                setShowHoldOverlay(true);
-            }, 500);
-        }
-    }, [isConnected, firebaseData]);
-
-    const handleTapAndHoldEnd = useCallback(() => {
-        clearTimeout(holdTimeoutRef.current);
-        setShowHoldOverlay(false);
-    }, []);
-
-    // Logika Two-Finger Swipe Down untuk Settings Modal
-    const handleTwoFingerTouchStart = useCallback((e) => {
-        if (e.touches.length === 2) {
-            touchStartPosRef.current = [
-                { x: e.touches[0].clientX, y: e.touches[0].clientY },
-                { x: e.touches[1].clientX, y: e.touches[1].clientY }
-            ];
-            isSwipingRef.current = false; // Reset swiping state
-            // Penting: Mencegah default browser action (zoom/scroll) segera
-            e.preventDefault();
-        }
-    }, []);
-
-    const handleTwoFingerTouchMove = useCallback((e) => {
-        if (e.touches.length === 2 && touchStartPosRef.current.length === 2) {
-            const currentY0 = e.touches[0].clientY;
-            const currentY1 = e.touches[1].clientY;
-
-            const deltaY0 = currentY0 - touchStartPosRef.current[0].y;
-            const deltaY1 = currentY1 - touchStartPosRef.current[1].y;
-
-            // Deteksi swipe ke bawah untuk kedua jari
-            if (deltaY0 > swipeThreshold && deltaY1 > swipeThreshold && !isSwipingRef.current) {
-                isSwipingRef.current = true;
-                setShowSettingsModal(true);
-                e.preventDefault(); // Mencegah scrolling
-            } else if (Math.abs(deltaY0) > swipeThreshold || Math.abs(deltaY1) > swipeThreshold) {
-                // Jika ada pergerakan signifikan tapi bukan swipe 2 jari ke bawah
-                isSwipingRef.current = true; // Tandai sebagai swiping untuk mencegah interaksi lain
-                e.preventDefault(); // Tetap mencegah default action selama swipe
+        mainNumpad.addEventListener('click', (e) => {
+            if (!e.target.matches('.numpad-btn')) return;
+            const key = e.target.dataset.key;
+            if (key === 'del') { enteredCode = enteredCode.slice(0, -1); } 
+            else if (enteredCode.length < 4) { enteredCode += key; }
+            updateNumpadDisplay();
+            if (enteredCode.length === 4) {
+                numpadOverlay.style.display = 'none'; 
+                verifyAndConnect(enteredCode); 
             }
-        }
-    }, [swipeThreshold]);
+        });
+        
+        // Close numpad if clicking outside it
+        numpadOverlay.addEventListener('click', (e) => {
+            if (e.target === numpadOverlay) { numpadOverlay.style.display = 'none'; }
+        });
 
-    const handleTwoFingerTouchEnd = useCallback(() => {
-        touchStartPosRef.current = [];
-        isSwipingRef.current = false;
-    }, []);
+        // Event listeners for Settings Modal
+        saveSettingsBtn.addEventListener('click', saveSettings);
+        closeSettingsBtn.addEventListener('click', hideSettingsModal);
+        // Close settings if clicking outside it
+        settingsOverlay.addEventListener('click', (e) => {
+            if (e.target === settingsOverlay) { hideSettingsModal(); }
+        });
 
-    // Pasang Event Listeners
-    useEffect(() => {
-        // Listeners untuk Tap and Hold (Peek)
-        document.body.addEventListener('touchstart', handleTapAndHoldStart, { passive: true }); // Passive true untuk performa
-        document.body.addEventListener('touchend', handleTapAndHoldEnd);
-        document.body.addEventListener('mousedown', handleTapAndHoldStart);
-        document.body.addEventListener('mouseup', handleTapAndHoldEnd);
+        // Gesture detection for two-finger swipe down
+        let initialTouchY = {}; 
+        let touchCount = 0;
+        const SWIPE_THRESHOLD = 80; 
 
-        // Listeners untuk Two-Finger Swipe (Settings)
-        document.body.addEventListener('touchstart', handleTwoFingerTouchStart, { passive: false }); // PENTING: passive false
-        document.body.addEventListener('touchmove', handleTwoFingerTouchMove, { passive: false }); // Passive false untuk preventDefault
-        document.body.addEventListener('touchend', handleTwoFingerTouchEnd);
-
-
-        return () => {
-            document.body.removeEventListener('touchstart', handleTapAndHoldStart);
-            document.body.removeEventListener('touchend', handleTapAndHoldEnd);
-            document.body.removeEventListener('mousedown', handleTapAndHoldStart);
-            document.body.removeEventListener('mouseup', handleTapAndHoldEnd);
-
-            document.body.removeEventListener('touchstart', handleTwoFingerTouchStart);
-            document.body.removeEventListener('touchmove', handleTwoFingerTouchMove);
-            document.body.removeEventListener('touchend', handleTwoFingerTouchEnd);
-        };
-    }, [handleTapAndHoldStart, handleTapAndHoldEnd, handleTwoFingerTouchStart, handleTwoFingerTouchMove, handleTwoFingerTouchEnd]);
-
-    // Tambahkan meta tag viewport dan PWA untuk mencegah zoom dan mengaktifkan mode fullscreen
-    useEffect(() => {
-        const createOrUpdateMeta = (name, content, rel = null) => {
-            let tag = document.querySelector(`meta[name="${name}"]`) || document.querySelector(`link[rel="${rel}"]`);
-            if (!tag) {
-                tag = rel ? document.createElement('link') : document.createElement('meta');
-                if (rel) tag.rel = rel;
-                if (name) tag.name = name;
-                document.head.appendChild(tag);
+        document.body.addEventListener('touchstart', (e) => {
+            if (numpadOverlay.style.display === 'flex' || settingsOverlay.style.display === 'flex') {
+                return;
             }
-            if (rel) { // For link tags like apple-touch-icon
-                tag.href = content;
-            } else { // For meta tags
-                tag.content = content;
+
+            touchCount = e.touches.length;
+            if (touchCount >= 2) {
+                initialTouchY = {
+                    0: e.touches[0].clientY,
+                    1: e.touches[1].clientY
+                };
             }
-            return tag;
-        };
+        }, { passive: true }); 
 
-        // Viewport (anti-zoom)
-        createOrUpdateMeta('viewport', 'width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0');
+        document.body.addEventListener('touchmove', (e) => {
+            if (numpadOverlay.style.display === 'flex' || settingsOverlay.style.display === 'flex') {
+                return;
+            }
 
-        // PWA Meta Tags (fullscreen, status bar, title)
-        createOrUpdateMeta('apple-mobile-web-app-capable', 'yes');
-        createOrUpdateMeta('apple-mobile-web-app-status-bar-style', 'black-translucent');
-        createOrUpdateMeta('apple-mobile-web-app-title', 'Divina'); // Sesuaikan dengan nama aplikasi Anda
+            if (touchCount >= 2 && e.touches.length >= 2) {
+                const currentTouchY0 = e.touches[0].clientY;
+                const currentTouchY1 = e.touches[1].clientY;
 
-        // PWA Icon
-        createOrUpdateMeta('apple-touch-icon', 'https://images2.imgbox.com/c4/02/as2b5MEJ_o.png', 'apple-touch-icon');
-        createOrUpdateMeta('icon', 'https://images2.imgbox.com/c4/02/as2b5MEJ_o.png', 'icon');
+                const deltaY0 = currentTouchY0 - initialTouchY[0];
+                const deltaY1 = currentTouchY1 - initialTouchY[1];
 
-        // Theme Color
-        createOrUpdateMeta('theme-color', '#E1F5FE');
+                if (deltaY0 > SWIPE_THRESHOLD && deltaY1 > SWIPE_THRESHOLD && deltaY0 > 0 && deltaY1 > 0) {
+                    showSettingsModal();
+                    initialTouchY = {};
+                    touchCount = 0;
+                    e.preventDefault(); 
+                }
+            }
+        }, { passive: false }); 
 
-    }, []);
+        document.body.addEventListener('touchend', (e) => {
+            initialTouchY = {};
+            touchCount = 0;
+        });
 
-
-    // Tentukan kelas indikator koneksi
-    const connectionIndicatorClass = isConnected
-        ? (isTtsEnabled ? 'tts-active' : 'connected')
-        : (showLoading ? 'loading' : 'failed');
-
-    return (
-        <div id="main-container" className="min-h-screen w-full flex flex-col justify-center items-center text-center p-5 overflow-hidden select-none"
-             onClick={handleMainContainerClick}>
-            <style>
-                {`
-                /* Original CSS from user.html */
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                html, body {
-                    height: 100%; width: 100%; overflow: hidden; 
-                    background: linear-gradient(to bottom, #FFFFFF 0%, #B3E5FC 100%);
-                    user-select: none; -webkit-user-select: none;
-                    /* Tambahan untuk mencegah zoom dan overscroll */
-                    touch-action: none;
-                    -ms-touch-action: none; /* For IE/Edge */
-                    overscroll-behavior-y: contain;
-                }
-                body { /* Ini akan diterapkan ke div utama sebagai fallback */
-                    display: flex; justify-content: center; align-items: center;
-                    color: #5D4037; 
-                    font-family: 'Cormorant Garamond', serif;
-                    padding: 20px;
-                }
-
-                /* --- CONTAINER UTAMA --- */
-                #main-container {
-                    width: 100%; height: 100%;
-                    padding: 20px;
-                    display: flex; flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    text-align: center;
-                    /* Tambahan untuk mencegah zoom dan overscroll */
-                    touch-action: none;
-                    -ms-touch-action: none; /* For IE/Edge */
-                    overscroll-behavior-y: contain;
-                }
-                #main-container h1#title {
-                    font-family: 'Cinzel', serif; 
-                    font-size: clamp(2rem, 7vw, 3.5rem);
-                    font-weight: 700;
-                    color: #B8860B;
-                    text-shadow: 1px 1px 3px rgba(255,255,255,0.5);
-                    margin-bottom: 20px;
-                    cursor: pointer;
-                    transition: color 0.3s ease;
-                    letter-spacing: 1px;
-                }
-                #main-container h1#title:hover { color: #A4770A; }
-                
-                /* --- KONTEN HASIL TAMPILAN (AI) --- */
-                #result-display { display: none; }
-                #result-display.visible { display: block; }
-                #result-code {
-                    font-family: 'Cinzel', serif; 
-                    font-size: clamp(40px, 10vw, 80px);
-                    color: #B8860B;
-                    text-shadow: 1px 1px 2px rgba(255,255,255,0.7);
-                    margin: 0;
-                    letter-spacing: 5px;
-                }
-                #ai-result {
-                    font-family: 'Cormorant Garamond', serif;
-                    font-style: italic;
-                    font-size: clamp(20px, 4vw, 28px);
-                    color: #5D4037;
-                    margin-top: 20px;
-                    max-width: 600px;
-                    line-height: 1.6;
-                }
-                
-                /* --- INDIKATOR KONEKSI --- */
-                #connection-indicator {
-                    position: fixed; top: 15px; left: 15px;
-                    width: 8px; height: 8px; border-radius: 50%;
-                    display: block; /* Selalu terlihat untuk menunjukkan status */
-                    z-index: 150;
-                    transition: all 0.3s ease;
-                }
-                #connection-indicator.failed, #connection-indicator.disconnected { 
-                    background-color: #C62828; 
-                    box-shadow: 0 0 10px #C62828;
-                }
-                #connection-indicator.connected { 
-                    background-color: #2E7D32; 
-                    box-shadow: 0 0 10px #2E7D32;
-                }
-                #connection-indicator.tts-active { 
-                    background-color: #1565C0; 
-                    box-shadow: 0 0 10px #1565C0;
-                }
-                #connection-indicator.tts-off {
-                    background-color: #FFA000;
-                    box-shadow: 0 0 10px #FFA000;
-                }
-                #connection-indicator.loading {
-                    background-color: #64B5F6;
-                    box-shadow: 0 0 10px #64B5F6;
-                    animation: pulse 1.5s infinite;
-                }
-
-                /* --- OVERLAY UNTUK TAP-AND-HOLD (FIREBASE DATA) --- */
-                .content-overlay { 
-                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                    display: flex; /* Dikelola oleh React's conditional rendering */
-                    justify-content: center;
-                    align-items: center;
-                    text-align: center;
-                    background-color: rgba(225, 245, 254, 0.85);
-                    backdrop-filter: blur(8px); z-index: 140;
-                }
-                #hold-content h2 {
-                    font-family: 'Cinzel', serif;
-                    font-size: clamp(24px, 6vw, 50px);
-                    color: #795548;
-                    margin: 0;
-                    line-height: 1.4;
-                }
-                #hold-content p {
-                    font-family: 'Cormorant Garamond', serif;
-                    font-size: clamp(20px, 5vw, 36px);
-                     color: #A1887F;
-                }
-                #hold-content #separator-line {
-                    margin: 20px auto; width: 120px; height: 2px;
-                    background-color: #D4AF37; border-radius: 2px;
-                }
-
-                /* --- KEYPAD INPUT --- */
-                #numpad-overlay {
-                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                    background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
-                    display: flex; /* Dikelola oleh rendering kondisional React */
-                    justify-content: center; align-items: center; z-index: 300;
-                }
-                #numpad-container { 
-                    background: #fdfdfd; padding: 30px; border-radius: 20px; 
-                    border: 1px solid #eee; text-align: center;
-                }
-                #numpad-prompt {
-                    font-family: 'Cormorant Garamond', serif; font-size: 1.2rem;
-                    color: #795548; margin-bottom: 25px;
-                }
-                .code-display { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
-                .code-digit {
-                    width: 50px; height: 65px; background-color: #eee;
-                    border-bottom: 2px solid #ccc; border-radius: 8px;
-                    display: flex; justify-content: center; align-items: center;
-                    font-size: 2.5rem; font-family: 'Cormorant Garamond', serif; color: #4E342E;
-                }
-                .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-                .numpad-btn {
-                    font-family: 'Lora', serif; font-size: 1.8rem; background-color: #fff;
-                    border: 1px solid #ddd; color: #4E342E; border-radius: 50%;
-                    width: 70px; height: 70px; margin: auto;
-                    cursor: pointer; transition: all 0.2s ease;
-                }
-                .numpad-btn:hover { background-color: #f5f5f5; border-color: #ccc; }
-                #btn-delete svg { width: 40%; height: 40%; fill: #8D6E63; pointer-events: none; }
-
-                /* --- ANIMASI --- */
-                #loading-overlay {
-                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                    background-color: rgba(225, 245, 254, 0.6); backdrop-filter: blur(5px);
-                    display: flex; /* Dikelola oleh rendering kondisional React */
-                    justify-content: center; align-items: center; z-index: 500;
-                }
-                .loader {
-                    border: 8px solid #f3f3f3; border-top: 8px solid #B8860B;
-                    border-radius: 50%; width: 60px; height: 60px;
-                    animation: spin 1s linear infinite;
-                }
-                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.7); } 100% { transform: scale(1); opacity: 1); } }
-                
-                /* Animasi baru untuk Toast */
-                @keyframes fade-in-up {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                `}
-            </style>
-
-            <div id="connection-indicator" className={connectionIndicatorClass}></div>
-
-            <h1 id="title" onClick={handleTitleClick}>
-                Angel Number Interpreter
-            </h1>
-
-            <div id="result-display" className={resultCode ? 'visible' : ''}>
-                <h1 id="result-code">
-                    {resultCode}
-                </h1>
-                <p id="ai-result">
-                    {aiResult}
-                </p>
-            </div>
-
-            {showNumpad && (
-                <Numpad
-                    onCodeEntered={handleNumpadCodeEntered}
-                    promptText={dynamicPrompts[Math.floor(Math.random() * dynamicPrompts.length)]}
-                />
-            )}
-
-            {showLoading && (
-                <div id="loading-overlay">
-                    <div className="loader"></div>
-                </div>
-            )}
-
-            {/* Overlay untuk Tap-and-Hold (Peek Information) */}
-            {showHoldOverlay && firebaseData && (
-                <div className="content-overlay" id="hold-overlay">
-                    <div id="hold-content">
-                        <h2 id="hold-bulan">{firebaseData.namaBulan}</h2>
-                        <p id="hold-zodiak">{firebaseData.kemungkinanZodiak}</p>
-                        <div id="separator-line"></div>
-                        <h2 id="hold-pertanyaan">{firebaseData.pertanyaan}</h2>
-                    </div>
-                </div>
-            )}
-
-            <SettingsModal
-                isVisible={showSettingsModal}
-                onClose={() => setShowSettingsModal(false)}
-                onSave={handleSaveSettings}
-                initialChatId={telegramChatId}
-                initialPeekMode={peekMode}
-            />
-
-            {toast && <Toast message={toast.message} type={toast.type} onClose={closeToast} />}
-        </div>
-    );
-};
-
-export default App;
+        // Initial load of settings when DOM is ready
+        document.addEventListener('DOMContentLoaded', loadSettings);
+    </script>
+</body>
+</html>

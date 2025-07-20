@@ -432,6 +432,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
         import { getDatabase, ref, onValue, get, set, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
 
+        // Firebase configuration (copied from index.html)
         const firebaseConfig = {
           apiKey: "AIzaSyCblBBI3macwNluj2Fv0QoHwHHuJKVtRec",
           authDomain: "divina-connect.firebaseapp.com",
@@ -509,7 +510,7 @@
             let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
             const payload = { contents: chatHistory };
             const apiKey = "AIzaSyAbmZ1Y64hK4QhIhrHyVdn5ycIk4C7I2io"; // Your Gemini API Key
-            const apiUrl = `https://generativs.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const result = await response.json();

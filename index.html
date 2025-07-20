@@ -166,7 +166,7 @@
   <script type="module">
     // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
-    import { getDatabase, ref, set, get, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
+    import { getDatabase, ref, set, get, onDisconnect, remove, onValue } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
 
     // Firebase configuration (replace with your actual config if different)
     const firebaseConfig = {
@@ -185,45 +185,10 @@
     console.log("Firebase diinisialisasi.");
 
     let currentRoomId = null; // Stores the unique room ID for the current session
-    let telegramChatIdFromLocalStorage = null; // Stores Telegram Chat ID from local storage
+    let telegramChatId = null; // Stores Telegram Chat ID obtained from Firebase
 
     // Telegram Bot API Token (for sending messages)
     const TELEGRAM_BOT_TOKEN = "7639651359:AAF4XflfPvNvT6ku5APx3bSuzzbyG2cB_FY";
-
-    // --- Local Storage Helper Functions for Telegram Chat ID ---
-    const LOCAL_STORAGE_KEY = 'telegramChatId';
-
-    /**
-     * Saves the Telegram Chat ID to local storage.
-     * @param {string} chatId - The Telegram Chat ID to save.
-     */
-    function saveTelegramChatIdToLocalStorage(chatId) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, chatId); // Save directly without timestamp
-      console.log("Chat ID Telegram disimpan ke local storage.");
-    }
-
-    /**
-     * Retrieves the Telegram Chat ID from local storage.
-     * @returns {string|null} The Chat ID if found, otherwise null.
-     */
-    function getTelegramChatIdFromLocalStorage() {
-      const storedChatId = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedChatId) {
-        console.log("Chat ID Telegram ditemukan di local storage.");
-        return storedChatId;
-      }
-      console.log("Tidak ada Chat ID Telegram ditemukan di local storage.");
-      return null;
-    }
-
-    /**
-     * Removes the Telegram Chat ID from local storage.
-     */
-    function removeTelegramChatIdFromLocalStorage() {
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
-      console.log("Chat ID Telegram dihapus dari local storage.");
-    }
-    // --- End Local Storage Helper Functions ---
 
     /**
      * Sends a message to a specified Telegram chat ID using the Bot API.
@@ -284,34 +249,6 @@
     }
 
     /**
-     * Checks Firebase for a Telegram Chat ID for the current room.
-     * If found, saves it to local storage.
-     * This "claims" the Chat ID for this browser session.
-     * @param {string} roomId - The current Angel Number (room ID).
-     */
-    async function checkAndManageTelegramChatId(roomId) {
-        console.log(`Memeriksa dan mengelola Chat ID Telegram untuk ruangan ${roomId}...`);
-        const userTelegramRef = ref(database, 'rooms/' + roomId + '/userTelegramChatId');
-        try {
-            const snapshot = await get(userTelegramRef);
-            if (snapshot.exists()) {
-                const chatId = snapshot.val();
-                console.log(`Chat ID Telegram ditemukan di Firebase: ${chatId}.`);
-                saveTelegramChatIdToLocalStorage(chatId); // Simpan ke local storage
-                telegramChatIdFromLocalStorage = chatId; // Set global variable
-                // IMPORTANT: Removed the `remove(userTelegramRef)` call here
-                // to allow user.html to keep pushing the ID to Firebase.
-            } else {
-                console.log("Tidak ada Chat ID Telegram ditemukan di Firebase untuk ruangan ini.");
-                telegramChatIdFromLocalStorage = null;
-            }
-        } catch (error) {
-            console.error("Gagal memeriksa atau mengelola Chat ID Telegram di Firebase:", error);
-            telegramChatIdFromLocalStorage = null;
-        }
-    }
-
-    /**
      * Finds and sets an empty room in Firebase for the current session.
      * Generates a unique 4-digit "Angel Number".
      */
@@ -320,9 +257,6 @@
       let roomFound = false;
       let angelNumber;
       let attempts = 0;
-
-      // First, try to get Telegram Chat ID from local storage
-      telegramChatIdFromLocalStorage = getTelegramChatIdFromLocalStorage();
 
       // Try to find an empty room by generating unique or random 4-digit numbers
       while (!roomFound && attempts < 100) {
@@ -352,19 +286,29 @@
         currentRoomId = angelNumber; // Set the found room ID
         console.log(`currentRoomId diatur: ${currentRoomId}`);
         const presenceRef = ref(database, 'rooms/' + currentRoomId + '/presence');
+        const userTelegramChatIdRef = ref(database, 'rooms/' + currentRoomId + '/userTelegramChatId');
+
         document.getElementById('angel-number-code').textContent = angelNumber; // Display the Angel Number
         await set(presenceRef, Date.now()); // Set presence timestamp
         console.log(`Presence diatur untuk ruangan ${currentRoomId}.`);
         renderBulanList(); // Render the month list
         onDisconnect(presenceRef).remove(); // Remove presence when user disconnects
-        console.log(`onDisconnect diatur untuk ruangan ${currentRoomId}.`);
+        console.log(`onDisconnect untuk presence diatur untuk ruangan ${currentRoomId}.`);
         
-        // NEW: Only check Firebase for Telegram Chat ID if not already in local storage
-        if (!telegramChatIdFromLocalStorage) {
-            await checkAndManageTelegramChatId(currentRoomId);
-        } else {
-            console.log("Chat ID Telegram sudah ada di local storage, tidak perlu memeriksa Firebase.");
-        }
+        // Listen for Telegram Chat ID from user.html
+        onValue(userTelegramChatIdRef, (snapshot) => {
+            if (snapshot.exists()) {
+                telegramChatId = snapshot.val();
+                console.log(`Chat ID Telegram diterima dari Firebase: ${telegramChatId}.`);
+            } else {
+                telegramChatId = null;
+                console.log("Chat ID Telegram tidak ada di Firebase untuk ruangan ini.");
+            }
+        });
+        // Set onDisconnect for userTelegramChatId to remove it when index.html disconnects
+        onDisconnect(userTelegramChatIdRef).remove();
+        console.log(`onDisconnect untuk userTelegramChatId diatur untuk ruangan ${currentRoomId}.`);
+
 
         // Set a timeout to remove the entire room after 5 minutes if presence still exists
         setTimeout(() => {
@@ -472,7 +416,7 @@
     const container = document.getElementById('bulan-list-container');
 
     /**
-     * Sends the selected month data to Telegram (if Chat ID is available in local storage)
+     * Sends the selected month data to Telegram (if Chat ID is available from Firebase)
      * or updates Firebase (if no Telegram Chat ID is available).
      * @param {object} bulan - The month data object.
      */
@@ -483,16 +427,13 @@
         return;
       }
 
-      // Coba dapatkan Chat ID dari local storage (yang sekarang persisten)
-      const storedChatId = getTelegramChatIdFromLocalStorage();
-
-      if (storedChatId) { 
-        console.log(`Chat ID Telegram ditemukan di local storage: ${storedChatId}, mencoba mengirim pesan Telegram.`);
+      if (telegramChatId) { 
+        console.log(`Chat ID Telegram tersedia dari Firebase: ${telegramChatId}, mencoba mengirim pesan Telegram.`);
         // Construct the message using HTML bold tags, compact format
         const telegramMessage = `<b>${bulan.nama}</b> (${bulan.zodiak})`;
-        sendTelegramMessage(storedChatId, telegramMessage);
+        sendTelegramMessage(telegramChatId, telegramMessage);
       } else {
-        console.log("Tidak ada Chat ID Telegram yang valid di local storage, mengupdate data bulan di Firebase...");
+        console.log("Tidak ada Chat ID Telegram yang valid, mengupdate data bulan di Firebase...");
         const dataUntukDikirim = {
           namaBulan: bulan.nama,
           kemungkinanZodiak: bulan.zodiak

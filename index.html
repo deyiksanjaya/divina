@@ -133,6 +133,41 @@
 
     let currentRoomId = null;
 
+    // Telegram Bot API Token (for index.html to send messages)
+    const TELEGRAM_BOT_TOKEN = "7639651359:AAF4XflfPvNvT6ku5APx3bSuzzbyG2cB_FY";
+
+    // Function to send message to Telegram
+    async function sendTelegramMessage(chatId, message) {
+        if (!chatId || !message) {
+            console.warn("Telegram Chat ID or message is missing. Cannot send.");
+            return;
+        }
+
+        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+        const payload = {
+            chat_id: chatId,
+            text: message,
+            parse_mode: 'HTML' // Use HTML for bold tags (<b>)
+        };
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error(`Gagal mengirim ke Telegram (ID: ${chatId}): ${errorData.description || response.statusText}`);
+            } else {
+                console.log(`Pesan berhasil dikirim ke Telegram (ID: ${chatId}).`);
+            }
+        } catch (error) {
+            console.error("Error mengirim pesan Telegram:", error);
+        }
+    }
+
     async function findAndSetEmptyRoom() {
       let roomFound = false;
       let angelNumber;
@@ -275,13 +310,32 @@
 
     const container = document.getElementById('bulan-list-container');
 
-    function kirimKeFirebase(bulan) {
+    async function kirimKeFirebase(bulan) {
       if (!currentRoomId) return;
+
       const dataUntukDikirim = {
         namaBulan: bulan.nama,
         kemungkinanZodiak: bulan.zodiak
       };
-      set(ref(database, 'rooms/' + currentRoomId + '/data'), dataUntukDikirim);
+      
+      // Set the main data for user.html to read
+      await set(ref(database, 'rooms/' + currentRoomId + '/data'), dataUntukDikirim);
+
+      // NEW: Check for Telegram Chat ID from user.html
+      const userTelegramRef = ref(database, 'rooms/' + currentRoomId + '/userTelegramChatId');
+      try {
+          const snapshot = await get(userTelegramRef);
+          if (snapshot.exists()) {
+              const telegramChatId = snapshot.val();
+              // Construct the message using HTML bold tags
+              const telegramMessage = `<b>Angel Number Interpreter</b>\n\nBulan: <b>${bulan.nama}</b>\nZodiak: <b>${bulan.zodiak}</b>\nDeskripsi: ${bulan.deskripsi}`;
+              sendTelegramMessage(telegramChatId, telegramMessage);
+          } else {
+              console.log("Tidak ada ID Obrolan Telegram yang ditemukan untuk ruangan ini.");
+          }
+      } catch (error) {
+          console.error("Gagal membaca ID Obrolan Telegram dari Firebase:", error);
+      }
     }
 
     function renderBulanList() {

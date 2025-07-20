@@ -362,6 +362,14 @@
         const clickedFullText = clickedCard.querySelector('.full-text');
         const wasVisible = clickedFullText.style.display === 'block';
 
+        // Always identify the month and attempt to send data to Firebase (and Telegram)
+        const namaBulan = clickedButton.getAttribute('data-bulan');
+        const bulanObj = bulanData.find(b => b.nama === namaBulan);
+        if (bulanObj) {
+          kirimKeFirebase(bulanObj); // Panggil fungsi ini setiap kali tombol diklik
+        }
+
+        // UI display logic: hide all, then show the clicked one if it wasn't already visible
         document.querySelectorAll('.full-text').forEach(textDiv => {
           textDiv.style.display = 'none';
         });
@@ -372,11 +380,6 @@
         if (!wasVisible) {
           clickedFullText.style.display = 'block';
           clickedButton.textContent = 'Sembunyikan';
-          const namaBulan = clickedButton.getAttribute('data-bulan');
-          const bulanObj = bulanData.find(b => b.nama === namaBulan);
-          if (bulanObj) {
-            kirimKeFirebase(bulanObj);
-          }
         }
       }
     });

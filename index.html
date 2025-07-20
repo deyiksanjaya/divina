@@ -24,83 +24,131 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Lora:ital@0;1&display=swap" rel="stylesheet" />
 
   <style>
+    /* Basic reset and body styling */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background-color: #121212;
-      color: #E0E0E0;
+      background-color: #121212; /* Dark background */
+      color: #E0E0E0; /* Light text color */
       font-family: 'Lora', serif;
       line-height: 1.7;
       padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align to top */
+      min-height: 100vh; /* Ensure body takes full viewport height */
     }
+    /* Container for the main content */
     .container {
       max-width: 800px;
+      width: 100%; /* Make it fluid */
       margin: 0 auto;
-      background-color: #1E1E1E;
-      border: 1px solid #444;
+      background-color: #1E1E1E; /* Slightly lighter dark background for content */
+      border: 1px solid #444; /* Subtle border */
       padding: 30px;
+      border-radius: 8px; /* Rounded corners */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Soft shadow */
     }
+    /* Main title styling */
     .main-title {
       font-family: 'Cinzel Decorative', cursive;
       font-size: 2rem;
       text-align: center;
-      color: #C0C0C0;
+      color: #C0C0C0; /* Lighter grey for title */
       margin-bottom: 5px;
     }
+    /* Subtitle for angel number */
     .angel-number-subtitle {
       font-family: 'Lora', serif;
       font-size: 1rem;
       text-align: center;
-      color: #888;
+      color: #888; /* Grey text */
       margin-bottom: 10px;
       letter-spacing: 1px;
     }
+    /* Styling for the angel number code itself */
     .angel-number-code {
       font-weight: bold;
-      color: #BDBDBD;
+      color: #BDBDBD; /* Slightly lighter grey */
       font-size: 2.5rem;
       display: inline-block;
       margin-top: 10px;
+      padding: 5px 15px;
+      background-color: #2a2a2a; /* Darker background for the number */
+      border-radius: 5px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
     }
+    /* Introduction text styling */
     .intro-text {
       font-size: 1rem;
       text-align: center;
-      color: #bbb;
+      color: #bbb; /* Lighter grey */
       margin-bottom: 30px;
       font-style: italic;
     }
+    /* Styling for each month card */
     .bulan-card {
-      border-bottom: 1px dashed #444;
+      border-bottom: 1px dashed #444; /* Dashed separator */
       padding: 25px 10px;
       text-align: center;
+    }
+    .bulan-card:last-child {
+        border-bottom: none; /* No border for the last card */
     }
     .bulan-card h2 {
       font-family: 'Cinzel Decorative', cursive;
       font-size: 1.8rem;
       color: #BDBDBD;
+      margin-bottom: 5px;
     }
     .bulan-card .subtitle {
       font-style: italic;
       color: #888;
+      margin-bottom: 15px;
     }
+    /* Hidden full text description */
     .full-text {
-      display: none;
+      display: none; /* Hidden by default */
       margin: 15px auto;
-      border-left: 2px solid #8B0000;
+      border-left: 2px solid #8B0000; /* Red left border */
       padding-left: 15px;
       text-align: justify;
-      max-width: 50ch;
+      max-width: 50ch; /* Limit line length for readability */
+      color: #ccc;
     }
+    /* Read more button styling */
     .read-more {
       background: none;
       border: 1px solid #888;
       color: #BDBDBD;
       padding: 8px 16px;
       cursor: pointer;
+      border-radius: 5px; /* Rounded corners */
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; /* Smooth transitions */
+      margin-top: 10px;
     }
     .read-more:hover {
-      background-color: #8B0000;
-      color: #fff;
+      background-color: #8B0000; /* Red background on hover */
+      color: #fff; /* White text on hover */
       border-color: #8B0000;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .container {
+        padding: 15px;
+      }
+      .main-title {
+        font-size: 1.5rem;
+      }
+      .angel-number-code {
+        font-size: 2rem;
+      }
+      .bulan-card h2 {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
@@ -115,9 +163,11 @@
   </div>
 
   <script type="module">
+    // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
     import { getDatabase, ref, set, get, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js";
 
+    // Firebase configuration (replace with your actual config if different)
     const firebaseConfig = {
       apiKey: "AIzaSyCblBBI3macwNluj2Fv0QoHwHHuJKVtRec",
       authDomain: "divina-connect.firebaseapp.com",
@@ -128,15 +178,20 @@
       appId: "1:777570372540:web:6b4f3be1b46dbe9fdcf9b9"
     };
     
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
 
-    let currentRoomId = null;
+    let currentRoomId = null; // Stores the unique room ID for the current session
 
-    // Telegram Bot API Token (for index.html to send messages)
+    // Telegram Bot API Token (for sending messages)
     const TELEGRAM_BOT_TOKEN = "7639651359:AAF4XflfPvNvT6ku5APx3bSuzzbyG2cB_FY";
 
-    // Function to send message to Telegram
+    /**
+     * Sends a message to a specified Telegram chat ID using the Bot API.
+     * @param {string} chatId - The Telegram chat ID to send the message to.
+     * @param {string} message - The message text to send.
+     */
     async function sendTelegramMessage(chatId, message) {
         if (!chatId || !message) {
             console.warn("Telegram Chat ID or message is missing. Cannot send.");
@@ -159,187 +214,232 @@
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error(`Gagal mengirim ke Telegram (ID: ${chatId}): ${errorData.description || response.statusText}`);
+                console.error(`Failed to send to Telegram (ID: ${chatId}): ${errorData.description || response.statusText}`);
             } else {
-                console.log(`Pesan berhasil dikirim ke Telegram (ID: ${chatId}).`);
+                console.log(`Message successfully sent to Telegram (ID: ${chatId}).`);
             }
         } catch (error) {
-            console.error("Error mengirim pesan Telegram:", error);
+            console.error("Error sending Telegram message:", error);
         }
     }
 
+    /**
+     * Generates a unique 4-digit number with unique digits.
+     * Used for initial attempts to create an Angel Number.
+     * @returns {string} A 4-digit string with unique digits.
+     */
+    function generateUniqueDigitNumber() {
+      let digits = ['0','1','2','3','4','5','6','7','8','9'];
+      let result = '';
+      for (let i = 0; i < 4; i++) {
+        digits.sort(() => Math.random() - 0.5); // Shuffle digits
+        const digit = digits.pop(); // Take a random digit
+        if (i === 0 && digit === '0') { // Ensure first digit is not '0'
+          digits.push(digit); // Put '0' back if it's the first
+          i--; // Retry for this position
+          continue;
+        }
+        result += digit;
+      }
+      return result;
+    }
+
+    /**
+     * Finds and sets an empty room in Firebase for the current session.
+     * Generates a unique 4-digit "Angel Number".
+     */
     async function findAndSetEmptyRoom() {
       let roomFound = false;
       let angelNumber;
       let attempts = 0;
 
-      function generateUniqueDigitNumber() {
-        let digits = ['0','1','2','3','4','5','6','7','8','9'];
-        let result = '';
-        for (let i = 0; i < 4; i++) {
-          digits.sort(() => Math.random() - 0.5);
-          const digit = digits.pop();
-          if (i === 0 && digit === '0') {
-            digits.push(digit);
-            i--;
-            continue;
-          }
-          result += digit;
-        }
-        return result;
-      }
-
+      // Try to find an empty room by generating unique or random 4-digit numbers
       while (!roomFound && attempts < 100) {
         angelNumber = attempts < 50
-          ? generateUniqueDigitNumber()
-          : Math.floor(1000 + Math.random() * 9000).toString();
+          ? generateUniqueDigitNumber() // First 50 attempts use unique digit numbers
+          : Math.floor(1000 + Math.random() * 9000).toString(); // After that, random 4-digit numbers
 
         const roomRef = ref(database, 'rooms/' + angelNumber);
         
         try {
           const snapshot = await get(roomRef);
-          if (!snapshot.exists()) {
+          if (!snapshot.exists()) { // Check if the room ID is not already taken
             roomFound = true;
           } else {
             attempts++;
           }
         } catch (error) {
-          console.error("Gagal memeriksa ruangan:", error);
+          console.error("Failed to check room:", error);
           break;
         }
       }
 
       if (roomFound) {
-        currentRoomId = angelNumber;
+        currentRoomId = angelNumber; // Set the found room ID
         const presenceRef = ref(database, 'rooms/' + currentRoomId + '/presence');
-        document.getElementById('angel-number-code').textContent = angelNumber;
-        await set(presenceRef, Date.now());
-        renderBulanList();
-        onDisconnect(presenceRef).remove();
+        document.getElementById('angel-number-code').textContent = angelNumber; // Display the Angel Number
+        await set(presenceRef, Date.now()); // Set presence timestamp
+        renderBulanList(); // Render the month list
+        onDisconnect(presenceRef).remove(); // Remove presence when user disconnects
+        
+        // Set a timeout to remove the entire room after 5 minutes if presence still exists
         setTimeout(() => {
           get(presenceRef).then(snapshot => {
             if (snapshot.exists()) {
               remove(ref(database, 'rooms/' + currentRoomId));
+              console.log(`Room ${currentRoomId} automatically removed after 5 minutes of inactivity.`);
             }
+          }).catch(error => {
+            console.error("Error checking presence for auto-removal:", error);
           });
-        }, 300000);
+        }, 300000); // 5 minutes = 300000 milliseconds
       } else {
         document.getElementById('angel-number-code').textContent = "ERROR";
-        console.error("Gagal menemukan ruangan kosong setelah 100 percobaan.");
+        console.error("Failed to find an empty room after 100 attempts.");
       }
     }
 
+    // Call findAndSetEmptyRoom when the window loads
     window.addEventListener('load', () => {
       findAndSetEmptyRoom();
     });
 
+    // Data for each month, including name, subtitle, zodiac, and description
     const bulanData = [
-  {
-    nama: "Januari",
-    subtitle: "Jiwa Ambisius yang Tersembunyi",
-    zodiak: "Capricorn / Aquarius",
-    deskripsi: "Kamu punya sisi ambisius yang sering tersembunyi di balik sikap tenangmu. Orang-orang mungkin tidak selalu menyadari seberapa besar tekadmu, tapi kamu tahu apa yang kamu inginkan dan perlahan, kamu kejar itu dengan logika dan kesabaran."
-  },
-  {
-    nama: "Februari",
-    subtitle: "Sang Visioner Berhati Lembut",
-    zodiak: "Aquarius / Pisces",
-    deskripsi: "Kamu sering merasa berbeda dari orang lain, seolah kamu hidup di antara dua dunia. Kamu punya intuisi kuat dan imajinasi yang kaya, membuatmu peka terhadap hal-hal yang tak kasatmata. Hati kecilmu menyimpan empati yang dalam."
-  },
-  {
-    nama: "Maret",
-    subtitle: "Arus Misterius Penuh Empati",
-    zodiak: "Pisces / Aries",
-    deskripsi: "Kadang kamu bisa sangat tenang, tapi ada sisi dalam dirimu yang bergejolak dan sulit ditebak. Kamu memiliki kedalaman emosional dan kepekaan artistik yang membuatmu mampu merasakan hal-hal yang tak terucapkan. Saat kamu terpancing, energimu bisa mengejutkan."
-  },
-  {
-    nama: "April",
-    subtitle: "Api Perintis yang Tak Terpadamkan",
-    zodiak: "Aries / Taurus",
-    deskripsi: "Kamu adalah pribadi yang tak suka diam terlalu lama. Ada dorongan dari dalam dirimu untuk menjadi yang pertama, untuk memulai sesuatu yang baru. Keberanianmu sering membuat orang kagum, dan gairahmu bisa membakar semangat siapa pun di sekitarmu."
-  },
-  {
-    nama: "Mei",
-    subtitle: "Pesona Duniawi yang Memikat",
-    zodiak: "Taurus / Gemini",
-    deskripsi: "Kamu tahu bagaimana menikmati hidup. Keindahan, kenyamanan, dan hal-hal kecil yang menyenangkan sangat berarti buatmu. Kamu punya daya tarik yang lembut tapi kuat, dan ketika kamu percaya pada sesuatu, kamu bisa jadi sangat teguh."
-  },
-  {
-    nama: "Juni",
-    subtitle: "Komunikator Ulung Berjiwa Ganda",
-    zodiak: "Gemini / Cancer",
-    deskripsi: "Kamu cepat tanggap dan punya rasa ingin tahu yang besar. Kadang kamu merasa dirimu punya dua sisi: satu yang suka bersosialisasi, dan satu lagi yang lebih dalam dan emosional. Justru perpaduan ini yang bikin kamu unik dan sulit dilupakan."
-  },
-  {
-    nama: "Juli",
-    subtitle: "Sang Pelindung Berhati Hangat",
-    zodiak: "Cancer / Leo",
-    deskripsi: "Ada sisi lembut dalam dirimu yang selalu ingin melindungi orang-orang yang kamu sayangi. Intuisi kamu sangat tajam, dan kamu sering tahu apa yang orang lain rasakan meski tak diucapkan. Kamu kuat, tapi juga penuh kasih sayang."
-  },
-  {
-    nama: "Agustus",
-    subtitle: "Raja Panggung yang Karismatik",
-    zodiak: "Leo / Virgo",
-    deskripsi: "Kamu terlahir dengan aura yang sulit diabaikan. Tanpa kamu sadari, banyak orang memperhatikanmu dan terinspirasi oleh semangatmu. Kamu punya karisma alami, dan ketika kamu percaya diri, tak ada yang bisa menghentikanmu."
-  },
-  {
-    nama: "September",
-    subtitle: "Analis Perfeksionis yang Cermat",
-    zodiak: "Virgo / Libra",
-    deskripsi: "Kamu tidak suka hal yang serba asal-asalan. Ada bagian dari dirimu yang selalu ingin semuanya rapi, terstruktur, dan benar. Kamu peduli pada detail, dan sering jadi tempat orang lain mencari solusi -- meskipun kamu kadang terlalu keras pada diri sendiri."
-  },
-  {
-    nama: "Oktober",
-    subtitle: "Diplomat Pencari Keseimbangan",
-    zodiak: "Libra / Scorpio",
-    deskripsi: "Kamu punya cara tersendiri untuk menciptakan harmoni. Kepekaanmu terhadap perasaan orang lain membuatmu jadi penengah yang baik. Tapi jangan salah -- di balik sikap tenangmu, ada kedalaman dan keinginan kuat akan hubungan yang jujur dan mendalam."
-  },
-  {
-    nama: "November",
-    subtitle: "Jiwa Intens Penuh Rahasia",
-    zodiak: "Scorpio / Sagittarius",
-    deskripsi: "Kamu tidak mudah ditebak. Ada kedalaman dalam pikiran dan emosimu yang sering tidak kamu tunjukkan ke semua orang. Tapi ketika kamu percaya, kamu sangat setia. Kamu juga punya kekuatan besar untuk bangkit dan berubah dalam kondisi apa pun."
-  },
-  {
-    nama: "Desember",
-    subtitle: "Petualang Optimis Berwawasan Luas",
-    zodiak: "Sagittarius / Capricorn",
-    deskripsi: "Kamu mencintai kebebasan dan selalu ingin tahu lebih banyak tentang dunia. Dalam dirimu ada semangat petualang yang tak pernah padam. Pandangan hidupmu yang luas sering membuka mata orang lain -- dan kamu selalu membawa optimisme ke mana pun kamu pergi."
-  }
-];
+      {
+        nama: "Januari",
+        subtitle: "Jiwa Ambisius yang Tersembunyi",
+        zodiak: "Capricorn / Aquarius",
+        deskripsi: "Kamu punya sisi ambisius yang sering tersembunyi di balik sikap tenangmu. Orang-orang mungkin tidak selalu menyadari seberapa besar tekadmu, tapi kamu tahu apa yang kamu inginkan dan perlahan, kamu kejar itu dengan logika dan kesabaran."
+      },
+      {
+        nama: "Februari",
+        subtitle: "Sang Visioner Berhati Lembut",
+        zodiak: "Aquarius / Pisces",
+        deskripsi: "Kamu sering merasa berbeda dari orang lain, seolah kamu hidup di antara dua dunia. Kamu punya intuisi kuat dan imajinasi yang kaya, membuatmu peka terhadap hal-hal yang tak kasatmata. Hati kecilmu menyimpan empati yang dalam."
+      },
+      {
+        nama: "Maret",
+        subtitle: "Arus Misterius Penuh Empati",
+        zodiak: "Pisces / Aries",
+        deskripsi: "Kadang kamu bisa sangat tenang, tapi ada sisi dalam dirimu yang bergejolak dan sulit ditebak. Kamu memiliki kedalaman emosional dan kepekaan artistik yang membuatmu mampu merasakan hal-hal yang tak terucapkan. Saat kamu terpancing, energimu bisa mengejutkan."
+      },
+      {
+        nama: "April",
+        subtitle: "Api Perintis yang Tak Terpadamkan",
+        zodiak: "Aries / Taurus",
+        deskripsi: "Kamu adalah pribadi yang tak suka diam terlalu lama. Ada dorongan dari dalam dirimu untuk menjadi yang pertama, untuk memulai sesuatu yang baru. Keberanianmu sering membuat orang kagum, dan gairahmu bisa membakar semangat siapa pun di sekitarmu."
+      },
+      {
+        nama: "Mei",
+        subtitle: "Pesona Duniawi yang Memikat",
+        zodiak: "Taurus / Gemini",
+        deskripsi: "Kamu tahu bagaimana menikmati hidup. Keindahan, kenyamanan, dan hal-hal kecil yang menyenangkan sangat berarti buatmu. Kamu punya daya tarik yang lembut tapi kuat, dan ketika kamu percaya pada sesuatu, kamu bisa jadi sangat teguh."
+      },
+      {
+        nama: "Juni",
+        subtitle: "Komunikator Ulung Berjiwa Ganda",
+        zodiak: "Gemini / Cancer",
+        deskripsi: "Kamu cepat tanggap dan punya rasa ingin tahu yang besar. Kadang kamu merasa dirimu punya dua sisi: satu yang suka bersosialisasi, dan satu lagi yang lebih dalam dan emosional. Justru perpaduan ini yang bikin kamu unik dan sulit dilupakan."
+      },
+      {
+        nama: "Juli",
+        subtitle: "Sang Pelindung Berhati Hangat",
+        zodiak: "Cancer / Leo",
+        deskripsi: "Ada sisi lembut dalam dirimu yang selalu ingin melindungi orang-orang yang kamu sayangi. Intuisi kamu sangat tajam, dan kamu sering tahu apa yang orang lain rasakan meski tak diucapkan. Kamu kuat, tapi juga penuh kasih sayang."
+      },
+      {
+        nama: "Agustus",
+        subtitle: "Raja Panggung yang Karismatik",
+        zodiak: "Leo / Virgo",
+        deskripsi: "Kamu terlahir dengan aura yang sulit diabaikan. Tanpa kamu sadari, banyak orang memperhatikanmu dan terinspirasi oleh semangatmu. Kamu punya karisma alami, dan ketika kamu percaya diri, tak ada yang bisa menghentikanmu."
+      },
+      {
+        nama: "September",
+        subtitle: "Analis Perfeksionis yang Cermat",
+        zodiak: "Virgo / Libra",
+        deskripsi: "Kamu tidak suka hal yang serba asal-asalan. Ada bagian dari dirimu yang selalu ingin semuanya rapi, terstruktur, dan benar. Kamu peduli pada detail, dan sering jadi tempat orang lain mencari solusi -- meskipun kamu kadang terlalu keras pada diri sendiri."
+      },
+      {
+        nama: "Oktober",
+        subtitle: "Diplomat Pencari Keseimbangan",
+        zodiak: "Libra / Scorpio",
+        deskripsi: "Kamu punya cara tersendiri untuk menciptakan harmoni. Kepekaanmu terhadap perasaan orang lain membuatmu jadi penengah yang baik. Tapi jangan salah -- di balik sikap tenangmu, ada kedalaman dan keinginan kuat akan hubungan yang jujur dan mendalam."
+      },
+      {
+        nama: "November",
+        subtitle: "Jiwa Intens Penuh Rahasia",
+        zodiak: "Scorpio / Sagittarius",
+        deskripsi: "Kamu tidak mudah ditebak. Ada kedalaman dalam pikiran dan emosimu yang sering tidak kamu tunjukkan ke semua orang. Tapi ketika kamu percaya, kamu sangat setia. Kamu juga punya kekuatan besar untuk bangkit dan berubah dalam kondisi apa pun."
+      },
+      {
+        nama: "Desember",
+        subtitle: "Petualang Optimis Berwawasan Luas",
+        zodiak: "Sagittarius / Capricorn",
+        deskripsi: "Kamu mencintai kebebasan dan selalu ingin tahu lebih banyak tentang dunia. Dalam dirimu ada semangat petualang yang tak pernah padam. Pandangan hidupmu yang luas sering membuka mata orang lain -- dan kamu selalu membawa optimisme ke mana pun kamu pergi."
+      }
+    ];
 
     const container = document.getElementById('bulan-list-container');
 
+    /**
+     * Sends the selected month data to Firebase and/or Telegram based on conditions.
+     * If userTelegramChatId exists, it will prioritize sending to Telegram and
+     * skip updating the month data in Firebase for the current room.
+     * @param {object} bulan - The month data object.
+     */
     async function kirimKeFirebase(bulan) {
-      if (!currentRoomId) return;
+      if (!currentRoomId) {
+        console.warn("No currentRoomId available. Cannot send data.");
+        return;
+      }
 
-      const dataUntukDikirim = {
-        namaBulan: bulan.nama,
-        kemungkinanZodiak: bulan.zodiak
-      };
-      
-      // Set the main data for user.html to read
-      await set(ref(database, 'rooms/' + currentRoomId + '/data'), dataUntukDikirim);
-
-      // Check for Telegram Chat ID from user.html
       const userTelegramRef = ref(database, 'rooms/' + currentRoomId + '/userTelegramChatId');
+      let telegramChatId = null;
+
+      // First, try to get the Telegram Chat ID
       try {
-          const snapshot = await get(userTelegramRef);
-          if (snapshot.exists()) {
-              const telegramChatId = snapshot.val();
-              // Construct the message using HTML bold tags, compact format
-              const telegramMessage = `<b>${bulan.nama}</b> (${bulan.zodiak})`;
-              sendTelegramMessage(telegramChatId, telegramMessage);
-          } else {
-              console.log("Tidak ada ID Obrolan Telegram yang ditemukan untuk ruangan ini.");
-          }
+        const snapshot = await get(userTelegramRef);
+        if (snapshot.exists()) {
+          telegramChatId = snapshot.val();
+          console.log(`Telegram Chat ID found: ${telegramChatId}`);
+        } else {
+          console.log("No Telegram Chat ID found for this room.");
+        }
       } catch (error) {
-          console.error("Gagal membaca ID Obrolan Telegram dari Firebase:", error);
+        console.error("Failed to read Telegram Chat ID from Firebase:", error);
+      }
+
+      // If Telegram Chat ID is NOT found, then update the month data in Firebase.
+      // This means Firebase update for month data is skipped if Telegram mode is active.
+      if (!telegramChatId) { 
+        const dataUntukDikirim = {
+          namaBulan: bulan.nama,
+          kemungkinanZodiak: bulan.zodiak
+        };
+        // Set the main data for user.html to read
+        await set(ref(database, 'rooms/' + currentRoomId + '/data'), dataUntukDikirim);
+        console.log(`Month data for ${bulan.nama} successfully updated in Firebase.`);
+      } else {
+        console.log(`Telegram mode is active (Chat ID found), skipping month data update in Firebase for ${bulan.nama}.`);
+      }
+
+      // Always attempt to send to Telegram if a chat ID is available
+      if (telegramChatId) {
+        // Construct the message using HTML bold tags, compact format
+        // The "Dikirim pada" part is removed as requested.
+        const telegramMessage = `<b>${bulan.nama}</b> (${bulan.zodiak})`;
+        sendTelegramMessage(telegramChatId, telegramMessage);
+      } else {
+        console.log("No Telegram Chat ID available, Telegram message not sent.");
       }
     }
 
+    /**
+     * Renders the list of month cards into the container.
+     */
     function renderBulanList() {
-      container.innerHTML = '';
+      container.innerHTML = ''; // Clear existing content
       bulanData.forEach(bulan => {
         const card = document.createElement('div');
         card.className = 'bulan-card';
@@ -355,6 +455,7 @@
       });
     }
 
+    // Event listener for clicks on the month cards (specifically the "Baca Selengkapnya" buttons)
     container.addEventListener('click', function(e) {
       if (e.target.classList.contains('read-more')) {
         const clickedButton = e.target;
@@ -362,14 +463,16 @@
         const clickedFullText = clickedCard.querySelector('.full-text');
         const wasVisible = clickedFullText.style.display === 'block';
 
-        // Always identify the month and attempt to send data to Firebase (and Telegram)
+        // Find the corresponding month object
         const namaBulan = clickedButton.getAttribute('data-bulan');
         const bulanObj = bulanData.find(b => b.nama === namaBulan);
+        
         if (bulanObj) {
-          kirimKeFirebase(bulanObj); // Panggil fungsi ini setiap kali tombol diklik
+          // Always call kirimKeFirebase, which now handles conditional Firebase update/Telegram send
+          kirimKeFirebase(bulanObj); 
         }
 
-        // UI display logic: hide all, then show the clicked one if it wasn't already visible
+        // UI display logic: hide all full texts, then show the clicked one if it wasn't already visible
         document.querySelectorAll('.full-text').forEach(textDiv => {
           textDiv.style.display = 'none';
         });

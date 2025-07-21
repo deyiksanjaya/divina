@@ -81,10 +81,6 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             letter-spacing: 0.5px;
         }
-        #start-btn {
-            background-color: #B8860B;
-            color: white;
-        }
         #start-btn:hover {
             background-color: #A4770A;
             transform: translateY(-2px);
@@ -102,8 +98,46 @@
         }
         
         /* --- AI RESULT DISPLAY --- */
-        #result-display { display: none; }
-        #result-display.visible { display: block; }
+        #result-display { 
+            display: none; /* Hidden by default */
+            width: 100%;
+            height: 100%;
+            flex-direction: column; /* Arrange children vertically */
+            justify-content: center; /* Center content vertically */
+            align-items: center; /* Center content horizontally */
+            text-align: center;
+            padding: 20px;
+            padding-bottom: 80px; /* Add space for the button at the bottom */
+            box-sizing: border-box; /* Include padding in width/height */
+        }
+        #result-display.visible {
+            display: flex;
+        }
+
+        /* Styling for the Back button on result display */
+        #result-back-btn {
+            background-color: #D4AF37;
+            color: white;
+            padding: 15px 25px; /* Sufficient padding for a prominent button */
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1rem, 4vw, 1.5rem); /* Make it similar to main buttons */
+            font-weight: 700;
+            border: none;
+            border-radius: 10px; /* Rounded corners like main buttons */
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Consistent shadow */
+            z-index: 160;
+            transition: all 0.3s ease; /* Add transition for hover effect consistency */
+            margin-top: 40px; /* Push it down from the AI result */
+            width: 80%; /* Match main button width */
+            max-width: 300px; /* Match main button max-width */
+        }
+        #result-back-btn:hover {
+            background-color: #C29B2A;
+            transform: translateY(-2px); /* Add hover effect like main buttons */
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+
         #result-code {
             font-family: 'Cinzel', serif; 
             font-size: clamp(40px, 10vw, 80px);
@@ -199,7 +233,11 @@
             display: flex; justify-content: center; align-items: center;
             font-size: 2.5rem; font-family: 'Cormorant Garamond', serif; color: #4E342E;
         }
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .numpad { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 15px; 
+        }
         .numpad-btn {
             font-family: 'Lora', serif; font-size: 1.8rem; background-color: #fff;
             border: 1px solid #ddd; color: #4E342E; border-radius: 50%;
@@ -208,6 +246,27 @@
         }
         .numpad-btn:hover { background-color: #f5f5f5; border-color: #ccc; }
         #btn-delete svg { width: 40%; height: 40%; fill: #8D6E63; pointer-events: none; }
+
+        /* Styling for the Back button on numpad */
+        #btn-back {
+            background-color: #D4AF37; /* Gold-like color */
+            color: white;
+            font-size: 1rem; /* Adjusted font size */
+            padding: 10px 15px; /* Added padding */
+            border-radius: 10px; /* Make it rectangular */
+            width: 100%; /* Take full width of its grid cell */
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-sizing: border-box; /* Include padding in width/height */
+        }
+        #btn-back:hover {
+            background-color: #C29B2A;
+        }
 
         /* --- ANIMATIONS --- */
         #loading-overlay {
@@ -442,6 +501,16 @@
                 height: 60px;
                 font-size: 1.5rem;
             }
+            /* Adjust numpad grid for smaller screens to accommodate 'Back' button */
+            .numpad {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            #btn-back {
+                grid-column: span 3; /* Make it span all columns */
+                width: auto; /* Allow auto width based on grid */
+                font-size: 0.9rem; /* Further reduce font size for small screens */
+                padding: 8px 12px; /* Adjust padding for smaller font */
+            }
             .setting-actions {
                 flex-direction: column;
                 gap: 10px;
@@ -451,6 +520,14 @@
             }
             #button-container {
                 width: 90%;
+            }
+            #result-back-btn {
+                padding: 12px 20px;
+                font-size: clamp(0.9rem, 3.5vw, 1.2rem);
+                width: 90%; /* Adjust width for smaller screens */
+            }
+            #result-display {
+                padding-bottom: 60px; /* Adjust padding for smaller button */
             }
         }
     </style>
@@ -466,6 +543,7 @@
         <div id="result-display">
             <h1 id="result-code"></h1>
             <p id="ai-result"></p>
+            <button id="result-back-btn">Kembali</button>
         </div>
     </div>
 
@@ -494,6 +572,7 @@
                 <button class="numpad-btn" data-key="7">7</button><button class="numpad-btn" data-key="8">8</button><button class="numpad-btn" data-key="9">9</button>
                 <button class="numpad-btn" id="btn-delete" data-key="del"><svg viewBox="0 0 576 512"><path d="M576 128c0-35.3-28.7-64-64-64H205.3c-17 0-33.3 6.7-45.3 18.7L9.4 233.4c-6 6-9.4 14.1-9.4 22.6s3.4 16.6 9.4 22.6L160 429.3c12 12 28.3 18.7 45.3 18.7H512c35.3 0 64-28.7 64-64V128zM271 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6-9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"/></svg></button>
                 <button class="numpad-btn" data-key="0">0</button>
+                <button class="numpad-btn" id="btn-back" data-key="back">Kembali</button>
             </div>
         </div>
     </div>
@@ -520,7 +599,7 @@
         </div>
     </div>
 
-    <!-- NEW: Info Modal HTML -->
+    <!-- Info Modal HTML -->
     <div id="info-modal-overlay" class="content-overlay">
         <div id="info-modal-container">
             <h2 id="info-modal-title"></h2>
@@ -579,11 +658,14 @@
         const closeSettingsBtn = document.getElementById('close-settings-btn');
         const toastMessage = document.getElementById('toast-message');
 
-        // NEW: Info Modal DOM elements
+        // Info Modal DOM elements
         const infoModalOverlay = document.getElementById('info-modal-overlay');
         const infoModalTitle = document.getElementById('info-modal-title');
         const infoModalContent = document.getElementById('info-modal-content');
         const infoModalCloseBtn = document.getElementById('info-modal-close-btn');
+
+        // Result Back Button DOM element
+        const resultBackBtn = document.getElementById('result-back-btn');
 
         // --- STATE & DATA VARIABLES ---
         let enteredCode = "";
@@ -638,8 +720,7 @@
             connectionIndicator.className = 'loading';
             connectionIndicator.style.display = 'block';
             buttonContainer.style.display = 'none'; // Hide buttons
-            resultDisplay.classList.remove('visible'); // Ensure result is hidden initially
-
+            
             const roomRef = ref(database, 'rooms/' + code);
             try {
                 const snapshot = await get(roomRef);
@@ -651,15 +732,15 @@
                     
                     resultCodeDisplay.textContent = code;
                     aiResultDisplay.textContent = aiText;
-                    resultDisplay.classList.add('visible');
+                    resultDisplay.classList.add('visible'); // Show result display
                     
                     listenToFirebaseForTTS(code);
                     
-                    // NEW: If Telegram sending is enabled, send the chat ID to Firebase
+                    // If Telegram sending is enabled, send the chat ID to Firebase
                     if (appSettings.sendToTelegram && appSettings.telegramChatId) {
                         const userTelegramRef = ref(database, 'rooms/' + code + '/userTelegramChatId');
                         await set(userTelegramRef, appSettings.telegramChatId);
-                        showToast("ID Obrolan Telegram dikirim ke server.");
+                        // Removed: showToast("ID Obrolan Telegram dikirim ke server.");
                     } 
 
                     // Set connection indicator based on TTS state
@@ -720,6 +801,7 @@
                 resultDisplay.classList.remove('visible');
                 buttonContainer.style.display = 'flex'; // Show buttons again
                 appMainTitle.classList.remove('clickable'); // Remove clickable from title
+                connectionIndicator.style.display = 'none'; // Hide indicator on failure
             }, 3000);
         }
 
@@ -799,7 +881,7 @@
             appSettings.sendToTelegram = sendToTelegramToggle.checked;
             try {
                 localStorage.setItem('divinaSettings', JSON.stringify(appSettings));
-                showToast("Pengaturan disimpan!");
+                // Removed: showToast("Pengaturan disimpan!");
                 // If settings are saved and connected, update Firebase with new chat ID if needed
                 if (isConnected && enteredCode) {
                     const userTelegramRef = ref(database, 'rooms/' + enteredCode + '/userTelegramChatId');
@@ -809,7 +891,7 @@
                 }
             } catch (e) {
                 console.error("Gagal menyimpan pengaturan ke localStorage:", e);
-                showToast("Gagal menyimpan pengaturan.", true);
+                // Removed: showToast("Gagal menyimpan pengaturan.", true);
             }
             hideSettingsModal(); 
         }
@@ -824,6 +906,7 @@
         }
 
         function showToast(message, isError = false) {
+            // This function is now only used for non-Telegram related toasts.
             toastMessage.textContent = message;
             toastMessage.style.backgroundColor = isError ? 'rgba(200, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.8)';
             toastMessage.classList.add('show');
@@ -832,7 +915,7 @@
             }, 3000);
         }
 
-        // NEW: Info Modal Functions
+        // Info Modal Functions
         function showInfoModal(title, content) {
             infoModalTitle.textContent = title;
             infoModalContent.textContent = content;
@@ -841,6 +924,18 @@
 
         function hideInfoModal() {
             infoModalOverlay.style.display = 'none';
+        }
+
+        // Function to return to home screen
+        function returnToHome() {
+            resultDisplay.classList.remove('visible'); // Hide result display
+            numpadOverlay.style.display = 'none'; // Hide numpad overlay (if active)
+            buttonContainer.style.display = 'flex'; // Show main buttons
+            appMainTitle.classList.remove('clickable'); // Remove clickable from title
+            connectionIndicator.style.display = 'none'; // Hide connection indicator
+            isConnected = false; // Reset connection state
+            enteredCode = ""; // Reset entered code
+            window.speechSynthesis.cancel(); // Stop any ongoing TTS
         }
 
         // --- EVENT LISTENERS ---
@@ -875,7 +970,7 @@
 
         mainContainer.addEventListener('click', (e) => {
             // Only allow TTS toggle if connected and not clicking on numpad/settings/info modal/buttons
-            if (!isConnected || e.target.closest('#numpad-overlay') || e.target.closest('#settings-overlay') || e.target.closest('#info-modal-overlay') || e.target.closest('#button-container')) return; 
+            if (!isConnected || e.target.closest('#numpad-overlay') || e.target.closest('#settings-overlay') || e.target.closest('#info-modal-overlay') || e.target.closest('#button-container') || e.target.closest('#result-back-btn')) return; 
             clearTimeout(ttsTapTimer);
             ttsTapCount++;
             ttsTapTimer = setTimeout(() => { ttsTapCount = 0; }, 600);
@@ -888,8 +983,14 @@
         mainNumpad.addEventListener('click', (e) => {
             if (!e.target.matches('.numpad-btn')) return;
             const key = e.target.dataset.key;
-            if (key === 'del') { enteredCode = enteredCode.slice(0, -1); } 
-            else if (enteredCode.length < 4) { enteredCode += key; }
+            if (key === 'del') { 
+                enteredCode = enteredCode.slice(0, -1); 
+            } else if (key === 'back') { 
+                returnToHome(); // Use the new function
+            }
+            else if (enteredCode.length < 4) { 
+                enteredCode += key; 
+            }
             updateNumpadDisplay();
             if (enteredCode.length === 4) {
                 numpadOverlay.style.display = 'none'; 
@@ -899,7 +1000,9 @@
         
         // Close numpad if clicking outside it
         numpadOverlay.addEventListener('click', (e) => {
-            if (e.target === numpadOverlay) { numpadOverlay.style.display = 'none'; }
+            if (e.target === numpadOverlay) { 
+                returnToHome(); // Use the new function
+            }
         });
 
         // Event listeners for Settings Modal
@@ -910,12 +1013,15 @@
             if (e.target === settingsOverlay) { hideSettingsModal(); }
         });
 
-        // NEW: Event listener for Info Modal close button
+        // Event listener for Info Modal close button
         infoModalCloseBtn.addEventListener('click', hideInfoModal);
         // Close info modal if clicking outside it
         infoModalOverlay.addEventListener('click', (e) => {
             if (e.target === infoModalOverlay) { hideInfoModal(); }
         });
+
+        // Event listener for the back button on result display
+        resultBackBtn.addEventListener('click', returnToHome);
 
         // Gesture detection for two-finger swipe down
         let initialTouchY = {}; 

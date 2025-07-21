@@ -42,18 +42,64 @@
             align-items: center;
             text-align: center;
         }
-        #main-container h1#title {
+        #app-main-title { /* Renamed from #title */
             font-family: 'Cinzel', serif; 
             font-size: clamp(2rem, 7vw, 3.5rem);
             font-weight: 700;
             color: #B8860B;
             text-shadow: 1px 1px 3px rgba(255,255,255,0.5);
             margin-bottom: 20px;
+            letter-spacing: 1px;
+            /* No cursor pointer by default, it will be added dynamically if connected */
+        }
+        #app-main-title.clickable {
             cursor: pointer;
             transition: color 0.3s ease;
-            letter-spacing: 1px;
         }
-        #main-container h1#title:hover { color: #A4770A; }
+        #app-main-title.clickable:hover {
+            color: #A4770A;
+        }
+
+        /* --- BUTTON CONTAINER --- */
+        #button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Space between buttons */
+            margin-top: 20px;
+            width: 80%; /* Adjust width as needed */
+            max-width: 300px; /* Max width for buttons */
+        }
+        .main-action-btn {
+            padding: 15px 25px;
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            letter-spacing: 0.5px;
+        }
+        #start-btn {
+            background-color: #B8860B;
+            color: white;
+        }
+        #start-btn:hover {
+            background-color: #A4770A;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        .secondary-btn {
+            background-color: #F5F5DC; /* Creamy color */
+            color: #5D4037;
+            border: 1px solid #D4AF37;
+        }
+        .secondary-btn:hover {
+            background-color: #EEE8AA; /* Lighter creamy color */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
         
         /* --- AI RESULT DISPLAY --- */
         #result-display { display: none; }
@@ -340,9 +386,50 @@
             visibility: visible;
         }
 
+        /* NEW: Info Modal Styles */
+        #info-modal-overlay {
+            background-color: rgba(0,0,0,0.7); 
+            backdrop-filter: blur(8px);
+            z-index: 450; /* Higher than settings, lower than loading */
+        }
+        #info-modal-container {
+            background: #fdfdfd;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid #eee;
+            text-align: center;
+            max-width: 500px;
+            width: 90%; 
+        }
+        #info-modal-container h2 {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            color: #795548;
+            margin-bottom: 20px;
+        }
+        #info-modal-container p {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1rem, 3.5vw, 1.2rem);
+            color: #5D4037;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            text-align: justify; /* Justify text for better readability */
+        }
+        #info-modal-close-btn {
+            padding: 10px 25px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            background-color: #B8860B;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            /* No hover effects */
+        }
+
         /* Responsive adjustments for smaller screens */
         @media (max-width: 600px) {
-            #numpad-container, #settings-container {
+            #numpad-container, #settings-container, #info-modal-container {
                 padding: 20px;
             }
             .code-digit {
@@ -362,12 +449,20 @@
             .setting-actions button {
                 width: 100%;
             }
+            #button-container {
+                width: 90%;
+            }
         }
     </style>
 </head>
 <body>
     <div id="main-container">
-        <h1 id="title">Angel Number Interpreter</h1>
+        <h1 id="app-main-title">Angel Number Interpreter</h1>
+        <div id="button-container">
+            <button id="start-btn" class="main-action-btn">Mulai</button>
+            <button id="what-is-angel-btn" class="main-action-btn secondary-btn">What is Angel Number</button>
+            <button id="about-app-btn" class="main-action-btn secondary-btn">About This App</button>
+        </div>
         <div id="result-display">
             <h1 id="result-code"></h1>
             <p id="ai-result"></p>
@@ -425,6 +520,15 @@
         </div>
     </div>
 
+    <!-- NEW: Info Modal HTML -->
+    <div id="info-modal-overlay" class="content-overlay">
+        <div id="info-modal-container">
+            <h2 id="info-modal-title"></h2>
+            <p id="info-modal-content"></p>
+            <button id="info-modal-close-btn">Tutup</button>
+        </div>
+    </div>
+
     <!-- Toast Message HTML -->
     <div id="toast-message"></div>
     
@@ -448,7 +552,11 @@
 
         // --- DOM ELEMENTS ---
         const mainContainer = document.getElementById('main-container');
-        const title = document.getElementById('title');
+        const appMainTitle = document.getElementById('app-main-title'); // Renamed from 'title'
+        const buttonContainer = document.getElementById('button-container'); // New element
+        const startBtn = document.getElementById('start-btn'); // New button
+        const whatIsAngelBtn = document.getElementById('what-is-angel-btn'); // New button
+        const aboutAppBtn = document.getElementById('about-app-btn'); // New button
         const resultDisplay = document.getElementById('result-display');
         const connectionIndicator = document.getElementById('connection-indicator');
         const holdOverlay = document.getElementById('hold-overlay');
@@ -470,6 +578,12 @@
         const saveSettingsBtn = document.getElementById('save-settings-btn');
         const closeSettingsBtn = document.getElementById('close-settings-btn');
         const toastMessage = document.getElementById('toast-message');
+
+        // NEW: Info Modal DOM elements
+        const infoModalOverlay = document.getElementById('info-modal-overlay');
+        const infoModalTitle = document.getElementById('info-modal-title');
+        const infoModalContent = document.getElementById('info-modal-content');
+        const infoModalCloseBtn = document.getElementById('info-modal-close-btn');
 
         // --- STATE & DATA VARIABLES ---
         let enteredCode = "";
@@ -523,8 +637,8 @@
         async function verifyAndConnect(code) {
             connectionIndicator.className = 'loading';
             connectionIndicator.style.display = 'block';
-            title.style.display = 'none';
-            resultDisplay.classList.remove('visible');
+            buttonContainer.style.display = 'none'; // Hide buttons
+            resultDisplay.classList.remove('visible'); // Ensure result is hidden initially
 
             const roomRef = ref(database, 'rooms/' + code);
             try {
@@ -547,8 +661,6 @@
                         await set(userTelegramRef, appSettings.telegramChatId);
                         showToast("ID Obrolan Telegram dikirim ke server.");
                     } 
-                    // REMOVED: No explicit remove() call here as per new flow.
-                    // index.html will handle removal from Firebase.
 
                     // Set connection indicator based on TTS state
                     if (isTtsEnabled) {
@@ -556,6 +668,9 @@
                     } else {
                         connectionIndicator.className = 'connected';
                     }
+                    // Make main title clickable to reload when connected
+                    appMainTitle.classList.add('clickable');
+
                 } else {
                     throw new Error(`Room ${code} tidak ditemukan atau tidak aktif.`);
                 }
@@ -600,16 +715,17 @@
             resultCodeDisplay.textContent = "Error";
             aiResultDisplay.textContent = errorMessage || "SERVER ERROR: Angka tidak aktif atau tidak ditemukan. Coba lagi.";
             resultDisplay.classList.add('visible');
+            // Hide result and show buttons after a delay
             setTimeout(() => {
                 resultDisplay.classList.remove('visible');
-                title.style.display = 'block';
-                showNumpad();
+                buttonContainer.style.display = 'flex'; // Show buttons again
+                appMainTitle.classList.remove('clickable'); // Remove clickable from title
             }, 3000);
         }
 
         // --- UI & INTERACTION FUNCTIONS ---
         function startHold(e) {
-            if (e.target.closest('#numpad-overlay') || e.target.closest('#settings-overlay')) return; 
+            if (e.target.closest('#numpad-overlay') || e.target.closest('#settings-overlay') || e.target.closest('#info-modal-overlay')) return; 
             if (isConnected && firebaseData) {
                 holdTimeout = setTimeout(() => {
                     holdOverlay.style.display = 'flex';
@@ -690,8 +806,6 @@
                     if (appSettings.sendToTelegram && appSettings.telegramChatId) {
                         set(userTelegramRef, appSettings.telegramChatId);
                     } 
-                    // REMOVED: The explicit remove() call here.
-                    // user.html no longer removes the chat ID from Firebase.
                 }
             } catch (e) {
                 console.error("Gagal menyimpan pengaturan ke localStorage:", e);
@@ -718,18 +832,50 @@
             }, 3000);
         }
 
+        // NEW: Info Modal Functions
+        function showInfoModal(title, content) {
+            infoModalTitle.textContent = title;
+            infoModalContent.textContent = content;
+            infoModalOverlay.style.display = 'flex';
+        }
+
+        function hideInfoModal() {
+            infoModalOverlay.style.display = 'none';
+        }
+
         // --- EVENT LISTENERS ---
         document.body.addEventListener('mousedown', startHold);
         document.body.addEventListener('mouseup', endHold);
         document.body.addEventListener('touchstart', startHold, { passive: true });
         document.body.addEventListener('touchend', endHold);
         
-        title.addEventListener('click', () => {
-            if (isConnected) { window.location.reload(); } else { showNumpad(); }
+        // New event listeners for the buttons
+        startBtn.addEventListener('click', () => {
+            showNumpad();
+        });
+
+        whatIsAngelBtn.addEventListener('click', () => {
+            showInfoModal(
+                "Apa Itu Angel Number?",
+                "Angel Number adalah urutan angka berulang yang diyakini membawa pesan dari alam semesta, malaikat pelindung, atau panduan spiritual. Angka-angka ini sering muncul secara kebetulan dalam kehidupan sehari-hari, seperti pada jam, plat nomor, atau tanda terima, dan dianggap sebagai tanda atau konfirmasi dari dunia spiritual."
+            );
+        });
+
+        aboutAppBtn.addEventListener('click', () => {
+            showInfoModal(
+                "Tentang Aplikasi Ini",
+                "Aplikasi ini dirancang untuk membantu Anda mengungkap makna tersembunyi di balik kombinasi angka yang Anda rasakan. Cukup masukkan angka-angka tersebut, dan biarkan aplikasi ini membimbing Anda menuju pemahaman yang lebih dalam tentang pesan-pesan yang ada di sekitar Anda. Ini adalah alat untuk introspeksi dan penemuan diri."
+            );
+        });
+
+        // Main title now only reloads if connected
+        appMainTitle.addEventListener('click', () => {
+            if (isConnected) { window.location.reload(); }
         });
 
         mainContainer.addEventListener('click', (e) => {
-            if (!isConnected || e.target.closest('#numpad-overlay') || e.target.closest('#settings-overlay')) return; 
+            // Only allow TTS toggle if connected and not clicking on numpad/settings/info modal/buttons
+            if (!isConnected || e.target.closest('#numpad-overlay') || e.target.closest('#settings-overlay') || e.target.closest('#info-modal-overlay') || e.target.closest('#button-container')) return; 
             clearTimeout(ttsTapTimer);
             ttsTapCount++;
             ttsTapTimer = setTimeout(() => { ttsTapCount = 0; }, 600);
@@ -764,13 +910,20 @@
             if (e.target === settingsOverlay) { hideSettingsModal(); }
         });
 
+        // NEW: Event listener for Info Modal close button
+        infoModalCloseBtn.addEventListener('click', hideInfoModal);
+        // Close info modal if clicking outside it
+        infoModalOverlay.addEventListener('click', (e) => {
+            if (e.target === infoModalOverlay) { hideInfoModal(); }
+        });
+
         // Gesture detection for two-finger swipe down
         let initialTouchY = {}; 
         let touchCount = 0;
         const SWIPE_THRESHOLD = 80; 
 
         document.body.addEventListener('touchstart', (e) => {
-            if (numpadOverlay.style.display === 'flex' || settingsOverlay.style.display === 'flex') {
+            if (numpadOverlay.style.display === 'flex' || settingsOverlay.style.display === 'flex' || infoModalOverlay.style.display === 'flex') {
                 return;
             }
 
@@ -784,7 +937,7 @@
         }, { passive: true }); 
 
         document.body.addEventListener('touchmove', (e) => {
-            if (numpadOverlay.style.display === 'flex' || settingsOverlay.style.display === 'flex') {
+            if (numpadOverlay.style.display === 'flex' || settingsOverlay.style.display === 'flex' || infoModalOverlay.style.display === 'flex') {
                 return;
             }
 

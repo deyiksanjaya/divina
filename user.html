@@ -675,6 +675,11 @@
         let firebaseData = null;
         let ttsTapCount = 0;
         let ttsTapTimer;
+        // New variables for settings triple tap
+        let settingsTapCount = 0;
+        let settingsTapTimer;
+        const SETTINGS_TAP_TIMEOUT = 600; // milliseconds
+
         const dynamicPrompts = [
             "masukan kombinasi angka random dalam hidupmu", "angka apa yang terlintas di benakmu saat ini?",
             "bisikan empat digit angka dari alam semesta...", "kombinasi mana yang memanggilmu hari ini?",
@@ -968,6 +973,7 @@
             if (isConnected) { window.location.reload(); }
         });
 
+        // Event listener for TTS toggle (triple tap on main container)
         mainContainer.addEventListener('click', (e) => {
             // Only allow TTS toggle if connected and not clicking on numpad/settings/info modal/buttons
             if (!isConnected || e.target.closest('#numpad-overlay') || e.target.closest('#settings-overlay') || e.target.closest('#info-modal-overlay') || e.target.closest('#button-container') || e.target.closest('#result-back-btn')) return; 
@@ -977,6 +983,26 @@
             if (ttsTapCount === 3) {
                 ttsTapCount = 0;
                 toggleTTS();
+            }
+        });
+
+        // New triple tap listener for settings (on empty space of the body)
+        document.body.addEventListener('touchend', (e) => {
+            // Prevent triple tap from activating if interacting with specific elements
+            if (e.target.closest('button') || e.target.closest('.content-overlay') || e.target.closest('.numpad-btn')) {
+                return;
+            }
+
+            clearTimeout(settingsTapTimer);
+            settingsTapCount++;
+
+            settingsTapTimer = setTimeout(() => {
+                settingsTapCount = 0; // Reset tap count if taps are not fast enough
+            }, SETTINGS_TAP_TIMEOUT);
+
+            if (settingsTapCount === 3) {
+                settingsTapCount = 0; // Reset for next sequence
+                showSettingsModal();
             }
         });
 
@@ -1022,51 +1048,6 @@
 
         // Event listener for the back button on result display
         resultBackBtn.addEventListener('click', returnToHome);
-
-        // Gesture detection for two-finger swipe down
-        let initialTouchY = {}; 
-        let touchCount = 0;
-        const SWIPE_THRESHOLD = 80; 
-
-        document.body.addEventListener('touchstart', (e) => {
-            if (numpadOverlay.style.display === 'flex' || settingsOverlay.style.display === 'flex' || infoModalOverlay.style.display === 'flex') {
-                return;
-            }
-
-            touchCount = e.touches.length;
-            if (touchCount >= 2) {
-                initialTouchY = {
-                    0: e.touches[0].clientY,
-                    1: e.touches[1].clientY
-                };
-            }
-        }, { passive: true }); 
-
-        document.body.addEventListener('touchmove', (e) => {
-            if (numpadOverlay.style.display === 'flex' || settingsOverlay.style.display === 'flex' || infoModalOverlay.style.display === 'flex') {
-                return;
-            }
-
-            if (touchCount >= 2 && e.touches.length >= 2) {
-                const currentTouchY0 = e.touches[0].clientY;
-                const currentTouchY1 = e.touches[1].clientY;
-
-                const deltaY0 = currentTouchY0 - initialTouchY[0];
-                const deltaY1 = currentTouchY1 - initialTouchY[1];
-
-                if (deltaY0 > SWIPE_THRESHOLD && deltaY1 > SWIPE_THRESHOLD && deltaY0 > 0 && deltaY1 > 0) {
-                    showSettingsModal();
-                    initialTouchY = {};
-                    touchCount = 0;
-                    e.preventDefault(); 
-                }
-            }
-        }, { passive: false }); 
-
-        document.body.addEventListener('touchend', (e) => {
-            initialTouchY = {};
-            touchCount = 0;
-        });
 
         // Initial load of settings when DOM is ready
         document.addEventListener('DOMContentLoaded', loadSettings);

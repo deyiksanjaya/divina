@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- SEO -->
   <title>Berapa Angel Number Saya Hari Ini? | The Zodiac Mirror</title>
   <meta name="description" content="Cari tahu berapa angel number kamu hari ini berdasarkan energi semesta dan bulan kelahiran. Temukan maknanya melalui The Zodiac Mirror." />
   <link rel="canonical" href="https://zodi.my.id/user" />
@@ -18,7 +17,6 @@
   }
   </script>
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Lora:ital@0;1&display=swap" rel="stylesheet" />
@@ -182,7 +180,6 @@
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
-    console.log("Firebase diinisialisasi.");
 
     let currentRoomId = null; // Stores the unique room ID for the current session
     let telegramChatId = null; // Stores Telegram Chat ID obtained from Firebase
@@ -196,9 +193,7 @@
      * @param {string} message - The message text to send.
      */
     async function sendTelegramMessage(chatId, message) {
-        console.log(`sendTelegramMessage dipanggil. Chat ID: ${chatId}, Pesan: ${message}`);
         if (!chatId || !message) {
-            console.warn("Telegram Chat ID atau pesan kosong. Tidak dapat mengirim.");
             return;
         }
 
@@ -218,12 +213,9 @@
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error(`Gagal mengirim ke Telegram (ID: ${chatId}): ${errorData.description || response.statusText}`);
             } else {
-                console.log(`Pesan berhasil dikirim ke Telegram (ID: ${chatId}).`);
             }
         } catch (error) {
-            console.error("Error saat mengirim pesan Telegram (catch block):", error);
         }
     }
 
@@ -253,7 +245,6 @@
      * Generates a unique 4-digit "Angel Number".
      */
     async function findAndSetEmptyRoom() {
-      console.log("Memulai findAndSetEmptyRoom...");
       let roomFound = false;
       let angelNumber;
       let attempts = 0;
@@ -265,75 +256,58 @@
           : Math.floor(1000 + Math.random() * 9000).toString(); // After that, random 4-digit numbers
 
         const roomRef = ref(database, 'rooms/' + angelNumber);
-        console.log(`Percobaan ${attempts + 1}: Memeriksa ruangan ${angelNumber}`);
         
         try {
           const snapshot = await get(roomRef);
           if (!snapshot.exists()) { // Check if the room ID is not already taken
             roomFound = true;
-            console.log(`Ruangan kosong ditemukan: ${angelNumber}`);
           } else {
-            console.log(`Ruangan ${angelNumber} sudah terisi.`);
             attempts++;
           }
         } catch (error) {
-          console.error("Gagal memeriksa ruangan (catch block):", error);
           break;
         }
       }
 
       if (roomFound) {
         currentRoomId = angelNumber; // Set the found room ID
-        console.log(`currentRoomId diatur: ${currentRoomId}`);
         const presenceRef = ref(database, 'rooms/' + currentRoomId + '/presence');
         const userTelegramChatIdRef = ref(database, 'rooms/' + currentRoomId + '/userTelegramChatId');
 
         document.getElementById('angel-number-code').textContent = angelNumber; // Display the Angel Number
         await set(presenceRef, Date.now()); // Set presence timestamp
-        console.log(`Presence diatur untuk ruangan ${currentRoomId}.`);
         renderBulanList(); // Render the month list
         onDisconnect(presenceRef).remove(); // Remove presence when user disconnects
-        console.log(`onDisconnect untuk presence diatur untuk ruangan ${currentRoomId}.`);
         
         // Listen for Telegram Chat ID from user.html
         onValue(userTelegramChatIdRef, (snapshot) => {
             if (snapshot.exists()) {
                 telegramChatId = snapshot.val();
-                console.log(`Chat ID Telegram diterima dari Firebase: ${telegramChatId}.`);
             } else {
                 telegramChatId = null;
-                console.log("Chat ID Telegram tidak ada di Firebase untuk ruangan ini.");
             }
         });
         // Set onDisconnect for userTelegramChatId to remove it when index.html disconnects
         onDisconnect(userTelegramChatIdRef).remove();
-        console.log(`onDisconnect untuk userTelegramChatId diatur untuk ruangan ${currentRoomId}.`);
 
 
         // Set a timeout to remove the entire room after 5 minutes if presence still exists
         setTimeout(() => {
-          console.log(`Memulai timeout 5 menit untuk ruangan ${currentRoomId}.`);
           get(presenceRef).then(snapshot => {
             if (snapshot.exists()) {
               remove(ref(database, 'rooms/' + currentRoomId));
-              console.log(`Ruangan ${currentRoomId} secara otomatis dihapus setelah 5 menit tidak aktif.`);
             } else {
-              console.log(`Presence untuk ruangan ${currentRoomId} sudah tidak ada, tidak perlu dihapus.`);
             }
           }).catch(error => {
-            console.error("Error memeriksa presence untuk penghapusan otomatis:", error);
           });
         }, 300000); // 5 minutes = 300000 milliseconds
       } else {
         document.getElementById('angel-number-code').textContent = "ERROR";
-        console.error("Gagal menemukan ruangan kosong setelah 100 percobaan.");
       }
-      console.log("findAndSetEmptyRoom selesai.");
     }
 
     // Call findAndSetEmptyRoom when the window loads
     window.addEventListener('load', () => {
-      console.log("Window loaded, memanggil findAndSetEmptyRoom.");
       findAndSetEmptyRoom();
     });
 
@@ -421,19 +395,15 @@
      * @param {object} bulan - The month data object.
      */
     async function kirimKeFirebase(bulan) {
-      console.log(`kirimKeFirebase dipanggil untuk bulan: ${bulan.nama}`);
       if (!currentRoomId) {
-        console.warn("currentRoomId tidak tersedia. Tidak dapat mengirim data.");
         return;
       }
 
       if (telegramChatId) { 
-        console.log(`Chat ID Telegram tersedia dari Firebase: ${telegramChatId}, mencoba mengirim pesan Telegram.`);
         // Construct the message using HTML bold tags, compact format
         const telegramMessage = `<b>${bulan.nama}</b> (${bulan.zodiak})`;
         sendTelegramMessage(telegramChatId, telegramMessage);
       } else {
-        console.log("Tidak ada Chat ID Telegram yang valid, mengupdate data bulan di Firebase...");
         const dataUntukDikirim = {
           namaBulan: bulan.nama,
           kemungkinanZodiak: bulan.zodiak
@@ -441,9 +411,7 @@
         // Set the main data for user.html to read
         try {
             await set(ref(database, 'rooms/' + currentRoomId + '/data'), dataUntukDikirim);
-            console.log(`Data bulan ${bulan.nama} berhasil diupdate di Firebase.`);
         } catch (error) {
-            console.error(`Gagal mengupdate data bulan ${bulan.nama} di Firebase (catch block):`, error);
         }
       }
     }
@@ -452,7 +420,6 @@
      * Renders the list of month cards into the container.
      */
     function renderBulanList() {
-      console.log("Memulai renderBulanList.");
       container.innerHTML = ''; // Clear existing content
       bulanData.forEach(bulan => {
         const card = document.createElement('div');
@@ -467,14 +434,11 @@
         `;
         container.appendChild(card);
       });
-      console.log("renderBulanList selesai.");
     }
 
     // Event listener for clicks on the month cards (specifically the "Baca Selengkapnya" buttons)
     container.addEventListener('click', function(e) {
-      console.log("Klik terdeteksi di container.");
       if (e.target.classList.contains('read-more')) {
-        console.log("Tombol 'Baca Selengkapnya' diklik.");
         const clickedButton = e.target;
         const clickedCard = clickedButton.closest('.bulan-card');
         const clickedFullText = clickedCard.querySelector('.full-text');
@@ -485,7 +449,6 @@
         const bulanObj = bulanData.find(b => b.nama === namaBulan);
         
         if (bulanObj) {
-          console.log(`Data bulan yang diklik: ${bulanObj.nama}`);
           // Always call kirimKeFirebase, which now handles conditional Firebase update/Telegram send
           kirimKeFirebase(bulanObj); 
         }
@@ -501,9 +464,7 @@
         if (!wasVisible) {
           clickedFullText.style.display = 'block';
           clickedButton.textContent = 'Sembunyikan';
-          console.log(`Menampilkan teks lengkap untuk ${namaBulan}.`);
         } else {
-          console.log(`Menyembunyikan teks lengkap untuk ${namaBulan}.`);
         }
       }
     });
